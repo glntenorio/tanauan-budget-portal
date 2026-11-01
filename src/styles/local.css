@@ -1184,3 +1184,35 @@ a[data-tip], button [data-tip] { cursor: pointer; }
 }
 @media (prefers-reduced-motion: reduce) { .vstep-track i { animation: none; } }
 .phero-tags .ploc { font-size: 12.5px; padding: 4px 10px; }
+
+/* =============================================================
+   Spacing pass: more air between groups, a clear break before
+   each section, consistent heading-to-content rhythm.
+   ============================================================= */
+.dash { gap: 20px; margin-bottom: 0; }
+.main { padding-top: 32px; padding-bottom: 72px; }
+/* Section breaks inside the overview */
+.dash-offices { margin-top: 36px; }
+.dash-offices .section-h { font-size: 24px; margin-bottom: 10px; }
+.dash-offices .section-lede { margin: 0 0 22px; max-width: 760px; line-height: 1.65; }
+.dash-offices .ogrid { gap: 20px; }
+.dash-offices .fine { margin-top: 16px; }
+.dcard-table { margin-top: 56px; padding: 28px; }
+.dcard-table .list-head { margin-bottom: 14px; }
+.toolbar { margin: 0 0 20px; }
+.disclaimers { margin-top: 40px; }
+.dcard-head { margin-bottom: 20px; }
+/* Office card internals */
+.ocard { padding: 28px; gap: 20px; }
+.ocard-figs { gap: 12px; }
+.ocard-groups { gap: 6px 18px; }
+.ocard-districts { padding-top: 16px; }
+/* Project page */
+.project2, .project2-main, .project2-side, .project2-grid { gap: 20px; }
+.phero { padding: 30px 32px; }
+@media (max-width: 860px) {
+  .dash { gap: 14px; }
+  .dash-offices { margin-top: 28px; }
+  .dcard-table { margin-top: 40px; padding: 20px 16px; }
+  .ocard { padding: 20px 18px; }
+}
