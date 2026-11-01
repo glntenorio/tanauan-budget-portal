@@ -7,6 +7,7 @@ import { Await, Disclaimers } from '../components/Bits';
 import OfficesSection from '../components/OfficesSection';
 import { AreaChart, BarList, Card, CountUp, DotMatrix, Donut, Icon, Ring, type IconName } from '../components/Dash';
 import { useGrown } from '../lib/motion';
+import BETTERGOV_LOGO from '../assets/bettergov-horizontal-primary.webp';
 import { gaaYearTotals, loadGaa } from '../lib/gaa';
 import { projectsCsv, downloadText } from '../lib/csv';
 import { count, php, phpDelta, plural } from '../lib/format';
@@ -204,31 +205,42 @@ function Projects({ scope, datasets }: { scope: ScopeResult; datasets: DatasetIn
         </Card>
 
         <aside className="dcard why span-12" style={{ '--i': 9 } as CSSProperties} aria-labelledby="why-h">
-          <div className="why-mark" aria-hidden="true"><Icon name="plus" /></div>
+          <figure className="why-quote">
+            <div className="why-photo" aria-hidden="true" />
+            <blockquote>
+              <p>Public money should be easy for anyone to see and check.</p>
+            </blockquote>
+            <figcaption>
+              <a className="why-sign" href="/about/">
+                <span className="footer-by-mark" aria-hidden="true" />
+                <span><b>Glen Tenorio</b><span>Filipino citizen · Batangas</span></span>
+              </a>
+            </figcaption>
+          </figure>
           <div className="why-body">
             <p className="dcard-kicker">A note from Glen</p>
-            <h2 id="why-h" className="dcard-title">Why I built this</h2>
-            <p>
-              As a Filipino citizen, I believe public money should be easy for anyone to see and check. Making the budget
-              transparent is one of my personal advocacies, and this portal is my small part in it: a free, independent
-              view of where the 2027 national budget is set to go in {name}, with the source behind every figure.
+            <h2 id="why-h" className="why-title">Why I built this</h2>
+            <p className="why-lead">
+              Making the budget transparent is one of my personal advocacies as a Filipino citizen. This portal is my small part
+              in it: a free, independent view of where the 2027 national budget is set to go in {name}, with the source behind
+              every figure.
             </p>
-            <p>
-              None of it would exist without <a href="https://bettergov.ph" target="_blank" rel="noopener">BetterGov.ph</a>, the
-              volunteer-run, open-source civic tech movement Filipino developer Jason Torres started in 2025. Its volunteers
-              built the Budget API behind every figure here and the{' '}
-              <a href="https://github.com/bettergovph/transparency-portal" target="_blank" rel="noopener">open-source portal</a> this
-              one is built on, so anyone can do the same for their own city.
-            </p>
-            <p className="why-fine">
-              I'm not paid for this and not affiliated with any government office, official or party. It makes no
-              allegations: it shows what the published NEP and House bill say, as BetterGov.ph's open data reads them. I'm not part of the BetterGov.ph team; I'm one of the people building on their work.
-            </p>
+            <ul className="why-pledges">
+              <li><span className="why-ico" aria-hidden="true"><Icon name="plus" /></span><span><b>Unpaid</b>Built in my own time, free to use</span></li>
+              <li><span className="why-ico" aria-hidden="true"><Icon name="capitol" /></span><span><b>Independent</b>No office, official or party</span></li>
+              <li><span className="why-ico" aria-hidden="true"><Icon name="doc" /></span><span><b>No allegations</b>Only what the documents say</span></li>
+            </ul>
+            <a className="why-credit" href="https://bettergov.ph" target="_blank" rel="noopener">
+              <img src={BETTERGOV_LOGO} alt="BetterGov.ph" width="120" height="26" />
+              <span>
+                <b>Built on BetterGov.ph</b>
+                The volunteer-run, open-source civic tech movement Filipino developer Jason Torres started in 2025. Its
+                volunteers built the Budget API and the open-source portal this one runs on. I'm not on their team, just
+                building on their work.
+              </span>
+              <span className="why-credit-go" aria-hidden="true"><Icon name="external" /></span>
+            </a>
           </div>
-          <a className="why-sign" href="/about/">
-            <span className="footer-by-mark" aria-hidden="true" />
-            <span><b>Glen Tenorio</b><span>Batangas, Philippines</span></span>
-          </a>
         </aside>
 
         <div className="span-12 dash-offices" id="offices">
