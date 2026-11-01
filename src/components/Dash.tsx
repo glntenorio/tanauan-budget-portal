@@ -270,6 +270,11 @@ const paths: Record<string, ReactNode> = {
   doc: <><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M9 13h6M9 17h4" /></>,
   capitol: <><path d="M3 21h18M4 10h16M12 3 4 8h16z" /><path d="M6 10v8M10 10v8M14 10v8M18 10v8" /></>,
   plus: <><circle cx="12" cy="12" r="9" /><path d="M12 8v8M8 12h8" /></>,
+  building: <><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2M10 21v-3h4v3" /></>,
+  road: <><path d="M6 21 9 3M18 21 15 3" /><path d="M12 5v2M12 11v2M12 17v2" /></>,
+  water: <><path d="M2 7c2 0 2-1.5 4-1.5S8 7 10 7s2-1.5 4-1.5S16 7 18 7s2-1.5 4-1.5M2 12c2 0 2-1.5 4-1.5s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5M2 17c2 0 2-1.5 4-1.5s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5" /></>,
+  bridge: <><path d="M2 17h20M4 17V9M20 17V9M2 9h20" /><path d="M4 9c3 4 13 4 16 0" /></>,
+  sprout: <><path d="M12 21v-9" /><path d="M12 12C12 7 8 5 4 5c0 4 3 7 8 7zM12 10c0-4 3-6 8-6 0 4-3 6-8 6z" /></>,
 };
 
 export type IconName = keyof typeof paths;

@@ -15,7 +15,8 @@
     "deploy:cloudflare": "npm run build && wrangler deploy",
     "build:poster": "tsx scripts/build-poster.ts",
     "deploy": "sh scripts/deploy-pages.sh",
-    "publish:glentenorio": "sh scripts/publish-glentenorio.sh"
+    "publish:glentenorio": "sh scripts/publish-glentenorio.sh",
+    "build:og": "tsx scripts/build-og.mjs"
   },
   "dependencies": {
     "react": "^19.2.5",

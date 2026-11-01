@@ -1,0 +1,45 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Geist:wght@600;700;800&family=Geist+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { width: 1200px; height: 630px; overflow: hidden; font-family: "DM Sans", sans-serif; color: #fff; background: #091315; }
+  .bg { position: absolute; inset: 0; background:
+      linear-gradient(90deg, rgba(9,19,21,.94) 0%, rgba(9,19,21,.8) 48%, rgba(9,19,21,.35) 78%, rgba(9,19,21,.2) 100%),
+      linear-gradient(0deg, rgba(9,19,21,.6) 0%, rgba(9,19,21,0) 45%),
+      url("{{PHOTO}}") 70% 45% / cover no-repeat; }
+  .wrap { position: absolute; inset: 0; padding: 56px 64px; display: flex; flex-direction: column; }
+  .brand { display: flex; align-items: center; gap: 12px; font-family: Geist; font-weight: 800; font-size: 24px; letter-spacing: -.02em; }
+  .brand b { color: #b9d0ae; }
+  .mark { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg,#6a8d5f,#44603c); display: grid; place-items: center; }
+  .mark::before { content: ""; width: 15px; height: 15px; border: 3px solid #fff; border-radius: 4px; transform: rotate(45deg); }
+  .sep { width: 1px; height: 26px; background: rgba(255,255,255,.25); margin: 0 6px; }
+  .portal { font-family: "DM Sans"; font-weight: 500; font-size: 20px; letter-spacing: 0; color: rgba(255,255,255,.8); }
+  .kicker { margin-top: 64px; font-family: "Geist Mono"; font-size: 17px; letter-spacing: .14em; text-transform: uppercase; color: #f7d08f; }
+  h1 { margin-top: 14px; font-family: Geist; font-weight: 800; font-size: 76px; line-height: .98; letter-spacing: -.045em; max-width: 760px; }
+  h1 span { display: block; font-size: 38px; font-weight: 600; letter-spacing: -.025em; color: rgba(255,255,255,.72); margin-top: 12px; }
+  .bars { margin-top: auto; width: 640px; display: grid; gap: 14px; }
+  .row { display: grid; grid-template-columns: 130px 1fr 150px; align-items: center; gap: 16px; font-size: 19px; }
+  .row .k { color: rgba(255,255,255,.75); font-weight: 500; }
+  .row .v { font-family: Geist; font-weight: 700; font-size: 26px; text-align: right; letter-spacing: -.03em; }
+  .track { display: flex; gap: 3px; height: 16px; padding: 3px; border-radius: 10px; background: rgba(255,255,255,.12); }
+  .track i { display: block; height: 100%; border-radius: 6px; }
+  .both-nep { background: linear-gradient(90deg,#c3d1be,#94ad89); }
+  .both-house { background: linear-gradient(90deg,#8fb383,#6a8d5f); }
+  .only-house { background: linear-gradient(90deg,#f6cb85,#e8962a); }
+  .only-nep { background: repeating-linear-gradient(135deg, rgba(255,255,255,.75) 0 2px, transparent 2px 6px); }
+  .house .v { color: #f7d08f; }
+  .foot { margin-top: 22px; display: flex; justify-content: space-between; align-items: center; font-size: 17px; color: rgba(255,255,255,.7); width: 1072px; }
+  .foot b { color: #f7d08f; font-weight: 600; }
+  .url { font-family: "Geist Mono"; font-size: 15px; color: rgba(255,255,255,.6); }
+</style></head>
+<body><div class="bg"></div><div class="wrap">
+  <div class="brand"><span class="mark"></span><span>glen<b>tenorio</b></span><span class="sep"></span><span class="portal">{{CITY}} Budget Portal</span></div>
+  <p class="kicker">FY 2027 · NEP and House Bill 10858</p>
+  <h1>{{N}} projects for {{SHORT}}<span>in the 2027 national budget</span></h1>
+  <div class="bars">
+    <div class="row"><span class="k">NEP</span><span class="track"><i class="both-nep" style="width:{{NEP_BOTH}}%"></i><i class="only-nep" style="width:{{NEP_ONLY}}%"></i></span><span class="v">{{NEP}}</span></div>
+    <div class="row house"><span class="k">House bill</span><span class="track"><i class="both-house" style="width:{{H_BOTH}}%"></i><i class="only-house" style="width:{{H_ONLY}}%"></i></span><span class="v">{{HOUSE}}</span></div>
+  </div>
+  <div class="foot"><span><b>{{HO_N}} House-only projects</b> worth {{HO_PHP}} · compared, never added</span><span class="url">glentenorio.com/tools/tanauan-budget-portal</span></div>
+</div></body></html>

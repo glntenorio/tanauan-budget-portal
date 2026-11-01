@@ -3,7 +3,7 @@ import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import type { BridgeGroup, DatasetInfo, Disclaimer, GroupInfo } from '../api/types';
 import { BRIDGE_GROUPS } from '../api/types';
 import { shortNameOf, type DatasetKey } from '../config';
-import { Await, Disclaimers, ReasonTags, StatusChip } from '../components/Bits';
+import { Await, Disclaimers } from '../components/Bits';
 import OfficesSection from '../components/OfficesSection';
 import { AreaChart, BarList, Card, CountUp, DotMatrix, Donut, Icon, Ring, type IconName } from '../components/Dash';
 import { useGrown } from '../lib/motion';
@@ -213,9 +213,16 @@ function Projects({ scope, datasets }: { scope: ScopeResult; datasets: DatasetIn
               transparent is one of my personal advocacies, and this portal is my small part in it: a free, independent
               view of where the 2027 national budget is set to go in {name}, with the source behind every figure.
             </p>
+            <p>
+              None of it would exist without <a href="https://bettergov.ph" target="_blank" rel="noopener">BetterGov.ph</a>, the
+              volunteer-run, open-source civic tech movement Filipino developer Jason Torres started in 2025. Its volunteers
+              built the Budget API behind every figure here and the{' '}
+              <a href="https://github.com/bettergovph/transparency-portal" target="_blank" rel="noopener">open-source portal</a> this
+              one is built on, so anyone can do the same for their own city.
+            </p>
             <p className="why-fine">
               I'm not paid for this and not affiliated with any government office, official or party. It makes no
-              allegations: it shows what the published NEP and House bill say, as BetterGov.ph's open data reads them.
+              allegations: it shows what the published NEP and House bill say, as BetterGov.ph's open data reads them. I'm not part of the BetterGov.ph team; I'm one of the people building on their work.
             </p>
           </div>
           <a className="why-sign" href="/about/">
@@ -500,40 +507,91 @@ function EnactedTrend() {
   );
 }
 
+/** What kind of work a line is, from its title: for the row icon. */
+function kindOf(p: ScopedProject): { icon: IconName; label: string } {
+  const t = p.title.toLowerCase();
+  if (p.dataset === 'fmr' || /farm-to-market|\bfmr\b/.test(t)) return { icon: 'sprout', label: 'Farm-to-market road' };
+  if (/flood|drainage|canal|slope protection|river/.test(t)) return { icon: 'water', label: 'Flood control and drainage' };
+  if (/bridge|\bbr\.?\b/.test(t)) return { icon: 'bridge', label: 'Bridge' };
+  if (/\broad\b|\brd\b|street|concreting|circumferential|diversion/.test(t)) return { icon: 'road', label: 'Road' };
+  if (/building|hall|school|center|centre|court|office/.test(t)) return { icon: 'building', label: 'Building' };
+  return { icon: 'projects', label: 'Project' };
+}
+
+/** "…, Barangay Darasa, Tanauan, Batangas" → "Brgy. Darasa". */
+function barangayOf(title: string): string | null {
+  const m = /\b(?:Barangay|Brgy\.?)\s+([A-Z][\w.ñÑ-]*(?:\s+(?!Tanauan)[A-Z0-9][\w.ñÑ-]*)*)/.exec(title);
+  return m ? `Brgy. ${m[1].replace(/[,.]$/, '')}` : null;
+}
+
+/** The title without the city and province, and without the barangay when it is shown as a tag. */
+function rowTitle(title: string, brgy: string | null): string {
+  let t = shortTitle(title).replace(/,?\s*Tanauan(?: City)?\s*$/i, '');
+  if (brgy) t = t.replace(/,?\s*(?:at\s+)?(?:Barangay|Brgy\.?)\s+[^,]+(?=,|$)/, '').replace(/\s+,/g, ',');
+  return t.replace(/[,\s]+$/, '');
+}
+
+function ChangeBadge({ p }: { p: ScopedProject }) {
+  switch (p.bridge_group) {
+    case 'house_only': return <span className="chg chg-new">New in House</span>;
+    case 'nep_only': return <span className="chg chg-dropped">Dropped</span>;
+    case 'unchanged': return <span className="chg chg-same">No change</span>;
+    case 'increased': return <span className="chg chg-up">{phpDelta(p.delta_php)}</span>;
+    case 'decreased': return <span className="chg chg-down">{phpDelta(p.delta_php)}</span>;
+    default: return <span className="chg chg-same">{phpDelta(p.delta_php)}</span>;
+  }
+}
+
 function ProjectTable({ rows, programName }: { rows: ScopedProject[]; programName: (k: DatasetKey) => string }) {
   if (!rows.length) return null;
   const max = Math.max(...rows.map((p) => Math.max(p.house_php ?? 0, p.nep_php ?? 0)), 1);
+  const w = (v: number | null | undefined) => `${((v ?? 0) / max) * 100}%`;
   return (
-    <div className="table" role="table" aria-label="Projects">
-      <div className="tr th" role="row">
-        <span role="columnheader">Project</span>
+    <div className="ptable" role="table" aria-label="Projects">
+      <div className="prow prow-head" role="row">
+        <span role="columnheader" className="pc-project">Project</span>
         <span role="columnheader">Status</span>
-        <span role="columnheader" className="r">NEP</span>
-        <span role="columnheader" className="r">House bill</span>
+        <span role="columnheader">NEP → House bill</span>
         <span role="columnheader" className="r">Change</span>
       </div>
-      {rows.map((p) => (
-        <div className={`tr row-${p.bridge_group}`} role="row" key={p.key}>
-          <span role="cell" className="td-project">
-            <Link to={`/projects/${p.dataset}/${encodeURIComponent(p.id)}`} className="project-title">{p.title}</Link>
-            <span className="project-meta">
-              <span className="label">{programName(p.dataset)}</span>
-              {p.office && <span>{shortOffice(p.office)}</span>}
-              {p.region && <span>{p.region}</span>}
-              <ReasonTags reasons={p.reasons} />
+      {rows.map((p) => {
+        const kind = kindOf(p);
+        const brgy = barangayOf(p.title);
+        return (
+          <div className={`prow g-row-${p.bridge_group}`} role="row" key={p.key}>
+            <span role="cell" className="pc-project">
+              <span className={`ptype t-${kind.icon}`} data-tip={kind.label}><Icon name={kind.icon} /></span>
+              <span className="pc-text">
+                <Link to={`/projects/${p.dataset}/${encodeURIComponent(p.id)}`} className="ptitle" data-tip={p.title}>
+                  {rowTitle(p.title, brgy)}
+                </Link>
+                <span className="pmeta">
+                  {brgy && <span className="ploc">{brgy}</span>}
+                  <span className="pprog">{programName(p.dataset)}</span>
+                  {p.office && <span>{shortOffice(p.office)}</span>}
+                  {p.held && <span className="tag tag-warn" data-tip="Unconfirmed match: the pairing is fuzzy or ambiguous.">unconfirmed</span>}
+                </span>
+              </span>
             </span>
-          </span>
-          <span role="cell" className="td-status"><StatusChip group={p.bridge_group} label={p.status_label} held={p.held} /></span>
-          <span role="cell" className="r num" data-label="NEP">{php(p.nep_php)}</span>
-          <span role="cell" className="r num strong td-amount" data-label="House bill">
-            {php(p.house_php)}
-            <span className="amt-bar" aria-hidden="true"><span style={{ width: `${((p.house_php ?? p.nep_php ?? 0) / max) * 100}%` }} /></span>
-          </span>
-          <span role="cell" className={`r num delta ${(p.delta_php ?? 0) > 0 ? 'up' : (p.delta_php ?? 0) < 0 ? 'down' : ''}`} data-label="Change">
-            {phpDelta(p.delta_php)}
-          </span>
-        </div>
-      ))}
+            <span role="cell" className="pc-status">
+              <span className={`pill pill-${p.bridge_group}`}>{p.status_label}</span>
+            </span>
+            <span role="cell" className="pc-amounts">
+              <span className="amt-line">
+                <span className="amt-k">NEP</span>
+                <span className="amt-bar2"><i className="k-nep" style={{ width: w(p.nep_php) }} /></span>
+                <span className="amt-v num">{php(p.nep_php)}</span>
+              </span>
+              <span className="amt-line is-house">
+                <span className="amt-k">House</span>
+                <span className="amt-bar2"><i className={`k-house-${p.bridge_group}`} style={{ width: w(p.house_php) }} /></span>
+                <span className="amt-v num">{php(p.house_php)}</span>
+              </span>
+            </span>
+            <span role="cell" className="pc-change r"><ChangeBadge p={p} /></span>
+          </div>
+        );
+      })}
     </div>
   );
 }
