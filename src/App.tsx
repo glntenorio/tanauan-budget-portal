@@ -14,7 +14,14 @@ export default function App() {
   const { config } = usePortal();
   const { pathname } = useLocation();
   // One page view per page (not per filter: those are events). The page's own effects have set its title by now.
-  useEffect(() => { trackPageView(); }, [pathname]);
+  useEffect(() => {
+    // The router's home is the base without its slash; the canonical (and the sitemap) have the slash.
+    const base = import.meta.env.BASE_URL;
+    if (base !== '/' && window.location.pathname === base.replace(/\/$/, '')) {
+      window.history.replaceState(window.history.state, '', base + window.location.search + window.location.hash);
+    }
+    trackPageView();
+  }, [pathname]);
   const problems = import.meta.env.DEV ? configProblems(config) : [];
   return (
     <GtLayout>

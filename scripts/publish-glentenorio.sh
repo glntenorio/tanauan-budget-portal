@@ -19,6 +19,9 @@ cat > "$DEST/.htaccess" <<HT
 # glntenorio/tanauan-budget-portal by scripts/publish-glentenorio.sh; don't edit here.
 RewriteEngine On
 RewriteBase $BASE
+# One address for the home page: with the trailing slash (as the canonical and sitemap).
+RewriteCond %{REQUEST_URI} ^${BASE%/}\$
+RewriteRule ^ $BASE [R=301,L]
 # Real files (hashed assets, og.jpg, favicon) are served as they are.
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
