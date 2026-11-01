@@ -908,3 +908,60 @@ a[data-tip], button [data-tip] { cursor: pointer; }
 }
 .why-body a { color: var(--accent-deep); font-weight: 600; text-decoration-color: rgba(84,115,78,.35); text-underline-offset: 3px; }
 .why-body a:hover { color: var(--accent); }
+
+/* =============================================================
+   Sliding menu pill (as on ICA Partners): rests on the current
+   item, glides to the one under the pointer. Desktop pointers only.
+   ============================================================= */
+.menu-pill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  border-radius: var(--radius-sm);
+  background: var(--grad);
+  box-shadow: 0 6px 16px -8px rgba(68, 96, 60, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  pointer-events: none;
+  opacity: 0;
+  transition: transform .45s var(--ease), width .45s var(--ease), height .45s var(--ease), opacity .2s linear;
+}
+.has-pill { position: relative; }
+.has-pill > a, .has-pill a { position: relative; z-index: 1; }
+/* With the pill on, the items drop their own fills; the lit one turns white. */
+.ptabs.has-pill a, .ptabs.has-pill a:hover, .ptabs.has-pill a.active { background: transparent; color: var(--ink-3); transition: color .2s linear .05s; }
+.ptabs.has-pill a.active { color: var(--accent-deep); }
+.ptabs.has-pill a.is-lit { color: #fff; }
+.ptabs.has-pill a.is-lit .ptab-chip { background: rgba(255, 255, 255, 0.2); border-color: transparent; color: #fff; }
+.ptabs.has-pill a.active::after { display: none; }
+.gt-layout .nav.has-pill a,
+.gt-layout .nav.has-pill a:hover,
+.gt-layout .nav.has-pill a.active { background: transparent; transition: color .2s linear .05s; }
+.gt-layout .nav.has-pill a.is-lit,
+.gt-layout .nav.has-pill a.is-lit .nav-icon { color: #fff; }
+.gt-layout .nav.has-pill a.is-lit .chip { background: rgba(255, 255, 255, 0.2); border-color: transparent; color: #fff; }
+.gt-layout .nav .menu-pill { border-radius: 8px; }
+@media (prefers-reduced-motion: reduce) { .menu-pill { transition: opacity .2s linear; } }
+
+/* Rows lift a little on hover: a raised card, nothing more */
+.ptable { overflow: visible; }
+.prow-head { border-radius: var(--radius) var(--radius) 0 0; }
+.prow:not(.prow-head) {
+  position: relative;
+  background: #fff;
+  transition: transform .35s var(--ease), box-shadow .35s var(--ease), border-radius .2s ease;
+}
+.prow:not(.prow-head):last-child { border-radius: 0 0 var(--radius) var(--radius); }
+@media (hover: hover) and (pointer: fine) {
+  .prow:not(.prow-head):hover {
+    z-index: 3;
+    transform: translateY(-2px);
+    border-radius: 12px;
+    box-shadow: 0 0 0 1px var(--rule), 0 14px 32px -14px rgba(9, 19, 21, 0.22), 0 4px 10px -6px rgba(9, 19, 21, 0.08);
+  }
+  .prow:not(.prow-head):hover .ptype { transform: scale(1.06); }
+}
+.ptype { transition: transform .35s var(--ease); }
+@media (prefers-reduced-motion: reduce) {
+  .prow:not(.prow-head), .ptype { transition: none; }
+  .prow:not(.prow-head):hover { transform: none; }
+}

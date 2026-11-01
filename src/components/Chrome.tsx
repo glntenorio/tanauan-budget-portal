@@ -5,6 +5,7 @@ import { usePortal } from '../lib/portal-context';
 import { date } from '../lib/format';
 import { NATIONAL_URL, SOURCE_CODE_URL } from '../lib/links';
 import { Icon, Tooltip } from './Dash';
+import { attachPill } from '../lib/pill';
 import GT_SIDEBAR from '../assets/gt-sidebar.html?raw';
 
 // Imported, so the build gives it a hashed name (safe under long cache headers).
@@ -43,6 +44,11 @@ export function GtLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     try { localStorage.setItem(COLLAPSED_KEY, collapsed ? '1' : '0'); } catch { /* private mode */ }
   }, [collapsed]);
+  // The sidebar menu gets the sliding pill (the copied markup marks Tools active).
+  useEffect(() => {
+    const menu = side.current?.querySelector<HTMLElement>('.nav');
+    return menu ? attachPill(menu) : undefined;
+  }, []);
   // A soft spotlight follows the pointer across dashboard cards.
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce), (hover: none)').matches) return;
@@ -105,6 +111,9 @@ export function PortalBar() {
   }, []);
   const meta = scope.status === 'ready' ? scope.value.meta : null;
   const projects = scope.status === 'ready' ? scope.value.projects.length : null;
+  const tabs = useRef<HTMLElement>(null);
+  // The tabs get the sliding pill; re-measured when the page or the bar's size changes.
+  useEffect(() => (tabs.current ? attachPill(tabs.current) : undefined), [pathname, hash, scrolled, projects]);
   return (
     <header className={`pbar${scrolled ? ' is-scrolled' : ''}`}>
       <div className="pbar-top">
@@ -123,7 +132,7 @@ export function PortalBar() {
           <img src={BETTERGOV_LOGO} alt="BetterGov.ph" width="110" height="24" />
         </a>
       </div>
-      <nav className="ptabs" aria-label="Portal sections">
+      <nav className="ptabs" aria-label="Portal sections" ref={tabs}>
         {NAV.map((n) => {
           const active = pathname === n.to && (n.hash ? hash === n.hash : !['#offices', '#projects'].includes(hash));
           return (

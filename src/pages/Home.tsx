@@ -520,14 +520,20 @@ function kindOf(p: ScopedProject): { icon: IconName; label: string } {
 
 /** "…, Barangay Darasa, Tanauan, Batangas" → "Brgy. Darasa". */
 function barangayOf(title: string): string | null {
-  const m = /\b(?:Barangay|Brgy\.?)\s+([A-Z][\w.ñÑ-]*(?:\s+(?!Tanauan)[A-Z0-9][\w.ñÑ-]*)*)/.exec(title);
+  // Name words are capitalised; all-caps codes ("FMR") and the city are not part of it.
+  const m = /\b(?:Barangay|Brgy\.?)\s+((?![A-Z]{2,}\b)(?!Hall\b)[A-Z][\w.ñÑ-]*(?:\s+(?!Tanauan\b)(?![A-Z]{2,}\b)[A-Z0-9][\w.ñÑ-]*)*)/.exec(title);
   return m ? `Brgy. ${m[1].replace(/[,.]$/, '')}` : null;
 }
 
 /** The title without the city and province, and without the barangay when it is shown as a tag. */
 function rowTitle(title: string, brgy: string | null): string {
   let t = shortTitle(title).replace(/,?\s*Tanauan(?: City)?\s*$/i, '');
-  if (brgy) t = t.replace(/,?\s*(?:at\s+)?(?:Barangay|Brgy\.?)\s+[^,]+(?=,|$)/, '').replace(/\s+,/g, ',');
+  // Only a trailing ", Barangay X" clause moves to the tag; "of Brgy. X Road" is part of the name.
+  if (brgy) {
+    t = t.replace(/,\s*(?:at\s+)?(?:Barangay|Brgy\.?)\s+[^,]+(?=,|$)/, '');
+    // A trailing "… at Barangay X" or "… - Barangay X" (not "of Brgy. X …").
+    t = t.replace(/(?<!\bof)\s+(?:at\s+|-\s+)?(?:Barangay|Brgy\.?)\s+(?!Hall\b)[^,()]+$/, '');
+  }
   return t.replace(/[,\s]+$/, '');
 }
 
