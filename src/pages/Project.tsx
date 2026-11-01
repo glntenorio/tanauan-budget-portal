@@ -3,7 +3,7 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import type { Envelope, ProjectDetail, Version } from '../api/types';
 import { DATASET_KEYS, shortNameOf, type DatasetKey } from '../config';
 import { Await, Disclaimers, External, ReasonTags, StatusChip } from '../components/Bits';
-import { phpDelta, phpFull } from '../lib/format';
+import { php, phpDelta, phpFull } from '../lib/format';
 import { usePortal, type Async } from '../lib/portal-context';
 import { projectKey } from '../lib/scope';
 import { reportHref } from '../lib/report';
@@ -58,7 +58,10 @@ function ProjectView({ env }: { env: Envelope<ProjectDetail> }) {
   const { config, overview, scope, client } = usePortal();
   const location = useLocation();
   const p = env.data;
-  useTitle(`${p.title} · ${shortNameOf(config)}`);
+  useTitle(
+    `${p.title.length > 48 ? `${p.title.slice(0, 46).replace(/[\s,.-]+\S*$/, '')}…` : p.title} | ${shortNameOf(config)} 2027 Budget`,
+    `${p.status_label}. NEP ${php(p.nep_php)}, House bill ${php(p.house_php)}${p.office ? `, ${p.office}` : ''}. With the source pages in the 2027 budget documents.`.slice(0, 158),
+  );
 
   const ov = overview.status === 'ready' ? overview.value.data : null;
   const program = ov?.datasets.find((d) => d.key === p.dataset);

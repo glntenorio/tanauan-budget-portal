@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import type { BridgeGroup, DatasetInfo, Disclaimer, GroupInfo } from '../api/types';
 import { BRIDGE_GROUPS } from '../api/types';
 import { shortNameOf, type DatasetKey } from '../config';
 import { Await, Disclaimers, ReasonTags, StatusChip } from '../components/Bits';
 import OfficesSection from '../components/OfficesSection';
-import { AreaChart, BarList, Card, CountUp, Donut, Ring } from '../components/Dash';
+import { AreaChart, BarList, Card, CountUp, DotMatrix, Donut, Icon, Ring, type IconName } from '../components/Dash';
 import { useGrown } from '../lib/motion';
 import { gaaYearTotals, loadGaa } from '../lib/gaa';
 import { projectsCsv, downloadText } from '../lib/csv';
@@ -26,7 +26,10 @@ const SORTS: Record<Sort, { label: string; cmp: (a: ScopedProject, b: ScopedProj
 
 export default function Home() {
   const { scope, overview, config } = usePortal();
-  useTitle(`Every FY 2027 project · ${shortNameOf(config)}`);
+  useTitle(
+    `${config.name} 2027 Budget: Every Project, NEP vs House Bill`,
+    `Every 2027 national budget project for ${config.name}: the NEP against the House bill, what was added or dropped, and the source page for each.`,
+  );
   const datasets = overview.status === 'ready' ? overview.value.data.datasets : [];
   return (
     <main className="page main">
@@ -94,6 +97,12 @@ function Projects({ scope, datasets }: { scope: ScopeResult; datasets: DatasetIn
     requestAnimationFrame(() => document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   };
 
+  useEffect(() => {
+    const on = (e: Event) => pickStatus((e as CustomEvent<string>).detail);
+    document.addEventListener('portal:status', on);
+    return () => document.removeEventListener('portal:status', on);
+  });
+
   // DPWH offices among the rows, largest first, for the Office filter.
   const offices = useMemo(() => {
     const n = new Map<string, number>();
@@ -151,7 +160,7 @@ function Projects({ scope, datasets }: { scope: ScopeResult; datasets: DatasetIn
           </div>
         </header>
 
-        <Kpis summary={summary} programName={programName} />
+        <Kpis summary={summary} rows={all} programName={programName} />
 
         <Card index={5} className="span-7" kicker="Compared, never added" title="NEP against the House bill">
           <Compare summary={summary} />
@@ -185,6 +194,7 @@ function Projects({ scope, datasets }: { scope: ScopeResult; datasets: DatasetIn
                 to: `/projects/${p.dataset}/${encodeURIComponent(p.id)}`,
                 className: `fill-${p.bridge_group}`,
                 meta: p.status_label,
+                tip: `${p.title} · ${p.status_label} · NEP ${php(p.nep_php)}, House bill ${php(p.house_php)}`,
               }))}
           />
         </Card>
@@ -192,6 +202,27 @@ function Projects({ scope, datasets }: { scope: ScopeResult; datasets: DatasetIn
         <Card index={8} className="span-5" kicker="Enacted, not spent" title="Budgets 2020–2026" action={<Link className="dcard-link" to="/gaa">Open →</Link>}>
           <EnactedTrend />
         </Card>
+
+        <aside className="dcard why span-12" style={{ '--i': 9 } as CSSProperties} aria-labelledby="why-h">
+          <div className="why-mark" aria-hidden="true"><Icon name="plus" /></div>
+          <div className="why-body">
+            <p className="dcard-kicker">A note from Glen</p>
+            <h2 id="why-h" className="dcard-title">Why I built this</h2>
+            <p>
+              As a Filipino citizen, I believe public money should be easy for anyone to see and check. Making the budget
+              transparent is one of my personal advocacies, and this portal is my small part in it: a free, independent
+              view of where the 2027 national budget is set to go in {name}, with the source behind every figure.
+            </p>
+            <p className="why-fine">
+              I'm not paid for this and not affiliated with any government office, official or party. It makes no
+              allegations: it shows what the published NEP and House bill say, as BetterGov.ph's open data reads them.
+            </p>
+          </div>
+          <a className="why-sign" href="/about/">
+            <span className="footer-by-mark" aria-hidden="true" />
+            <span><b>Glen Tenorio</b><span>Batangas, Philippines</span></span>
+          </a>
+        </aside>
 
         <div className="span-12 dash-offices" id="offices">
           <OfficesSection />
@@ -330,49 +361,75 @@ function shortTitle(t: string): string {
   return t.replace(/,?\s*Tanauan City,?\s*Batangas.*$/i, '').replace(/,?\s*Batangas\s*$/i, '');
 }
 
-function Kpis({ summary, programName }: { summary: Summary; programName: (k: DatasetKey) => string }) {
+function KpiHead({ icon, label, hint, badge }: { icon: IconName; label: string; hint?: string; badge?: ReactNode }) {
+  return (
+    <div className="kpi-head">
+      <span className="kpi-icon" aria-hidden="true"><Icon name={icon} /></span>
+      <p className="kpi-label">{label}{hint && <span className="kpi-hint">{hint}</span>}</p>
+      {badge}
+    </div>
+  );
+}
+
+function Kpis({ summary, rows, programName }: { summary: Summary; rows: ScopedProject[]; programName: (k: DatasetKey) => string }) {
   const grown = useGrown();
   const programs = (Object.entries(summary.byDataset) as [DatasetKey, { rows: number }][]).sort((a, b) => b[1].rows - a[1].rows);
   const max = Math.max(summary.nep.php, summary.house.php, 1);
   const houseOnly = summary.groups.house_only;
   const diff = summary.house.php - summary.nep.php;
+  const pctChange = summary.nep.php ? Math.round((diff / summary.nep.php) * 100) : 0;
+  // House-only first, then the rest, so the dots read as a share.
+  const order: BridgeGroup[] = ['house_only', 'increased', 'decreased', 'scope_review', 'unchanged', 'nep_only'];
+  const dots = [...rows]
+    .sort((a, b) => order.indexOf(a.bridge_group) - order.indexOf(b.bridge_group))
+    .map((p) => ({ key: p.key, className: `g-${p.bridge_group}`, title: `${shortTitle(p.title)} · ${p.status_label} · ${php(p.house_php ?? p.nep_php)}` }));
+  const scale = (v: number) => (grown ? `${(v / max) * 100}%` : '0%');
   return (
     <>
       <div className="dcard kpi span-3" style={{ '--i': 1 } as CSSProperties}>
-        <p className="kpi-label">Projects</p>
+        <KpiHead icon="projects" label="Projects" hint="in the 2027 budget" />
         <p className="kpi-value num"><CountUp value={summary.rows} format={count} /></p>
-        <div className="kpi-stack" aria-hidden="true">
-          {programs.map(([k, c], i) => (
-            <span key={k} className={`kpi-stack-seg s${i}`} style={{ flexGrow: grown ? c.rows : 0.0001 }} />
-          ))}
-        </div>
+        <DotMatrix items={dots} />
         <p className="kpi-sub">{programs.map(([k, c]) => `${programName(k)} ${count(c.rows)}`).join(' · ')}</p>
       </div>
       <div className="dcard kpi span-3" style={{ '--i': 2 } as CSSProperties}>
-        <p className="kpi-label">NEP <span className="muted">· proposed</span></p>
+        <KpiHead icon="doc" label="NEP" hint="as proposed" />
         <p className="kpi-value num"><CountUp value={summary.nep.php} format={php} /></p>
-        <div className="kpi-bar" aria-hidden="true"><span className="k-nep" style={{ width: grown ? `${(summary.nep.php / max) * 100}%` : 0 }} /></div>
-        <p className="kpi-sub">{plural(summary.nep.rows, 'project')}</p>
+        <div className="kpi-scale" aria-hidden="true">
+          <span className="kpi-scale-row is-me" data-tip={`NEP: ${php(summary.nep.php)}`}><i style={{ width: scale(summary.nep.php) }} /></span>
+          <span className="kpi-scale-row" data-tip={`House bill: ${php(summary.house.php)}`}><i style={{ width: scale(summary.house.php) }} /></span>
+        </div>
+        <p className="kpi-sub">{plural(summary.nep.rows, 'project')} · against the House bill below it</p>
       </div>
       <div className="dcard kpi kpi-accent span-3" style={{ '--i': 3 } as CSSProperties}>
-        <p className="kpi-label">House bill <span className="muted">· as passed</span></p>
+        <KpiHead
+          icon="capitol"
+          label="House bill"
+          hint="as passed"
+          badge={diff !== 0 ? <span className={`kpi-delta ${diff > 0 ? 'up' : 'down'}`}>{diff > 0 ? '▲' : '▼'} {Math.abs(pctChange)}%</span> : undefined}
+        />
         <p className="kpi-value num"><CountUp value={summary.house.php} format={php} /></p>
-        <div className="kpi-bar" aria-hidden="true"><span className="k-house" style={{ width: grown ? `${(summary.house.php / max) * 100}%` : 0 }} /></div>
-        <p className="kpi-sub">
-          {plural(summary.house.rows, 'project')}
-          {diff !== 0 && <span className={`kpi-delta ${diff > 0 ? 'up' : 'down'}`}>{phpDelta(diff)} vs NEP</span>}
-        </p>
-      </div>
-      <div className="dcard kpi kpi-pop span-3" style={{ '--i': 4 } as CSSProperties}>
-        <div className="kpi-row">
-          <div>
-            <p className="kpi-label">House bill only</p>
-            <p className="kpi-value num"><CountUp value={houseOnly.rows} format={count} /></p>
-          </div>
-          <Ring share={summary.house.php ? houseOnly.house_php / summary.house.php : 0} className="ring-pop" />
+        <div className="kpi-scale" aria-hidden="true">
+          <span className="kpi-scale-row" data-tip={`NEP: ${php(summary.nep.php)}`}><i style={{ width: scale(summary.nep.php) }} /></span>
+          <span className="kpi-scale-row is-me" data-tip={`House bill: ${php(summary.house.php)}`}><i style={{ width: scale(summary.house.php) }} /></span>
         </div>
-        <p className="kpi-sub">{php(houseOnly.house_php)} of the House total · candidates to check</p>
+        <p className="kpi-sub">{plural(summary.house.rows, 'project')} · {phpDelta(diff)} against the NEP</p>
       </div>
+      <button
+        type="button"
+        className="dcard kpi kpi-pop span-3"
+        style={{ '--i': 4 } as CSSProperties}
+        onClick={() => document.dispatchEvent(new CustomEvent('portal:status', { detail: 'house_only' }))}
+      >
+        <KpiHead icon="plus" label="House bill only" hint="not in the NEP" />
+        <div className="kpi-row">
+          <p className="kpi-value num"><CountUp value={houseOnly.rows} format={count} /></p>
+          <span data-tip={`${php(houseOnly.house_php)} of ${php(summary.house.php)}: the share of the House bill total in lines the NEP does not have`}>
+            <Ring share={summary.house.php ? houseOnly.house_php / summary.house.php : 0} className="ring-pop" />
+          </span>
+        </div>
+        <p className="kpi-sub">{php(houseOnly.house_php)} of the House total · <span className="kpi-go">See them →</span></p>
+      </button>
     </>
   );
 }
@@ -397,8 +454,8 @@ function Compare({ summary }: { summary: Summary }) {
             <span className="cmp-amount num"><CountUp value={r.total} format={php} /></span>
           </div>
           <div className="cmp-track" aria-hidden="true">
-            <span className="seg seg-both" style={{ width: pct(r.both), transitionDelay: `${200 + i * 150}ms` }} title={`In both versions: ${php(r.both)}`} />
-            {r.only > 0 && <span className={`seg ${r.onlyClass}`} style={{ width: pct(r.only), transitionDelay: `${500 + i * 150}ms` }} title={`${r.key === 'house' ? 'House bill only' : 'NEP only'}: ${php(r.only)}`} />}
+            <span className="seg seg-both" style={{ width: pct(r.both), transitionDelay: `${200 + i * 150}ms` }} data-tip={`${r.name}, lines in both versions: ${php(r.both)}`} />
+            {r.only > 0 && <span className={`seg ${r.onlyClass}`} style={{ width: pct(r.only), transitionDelay: `${500 + i * 150}ms` }} data-tip={`${r.key === 'house' ? 'In the House bill only' : 'In the NEP only'}: ${php(r.only)}. A candidate to check, not a finding.`} />}
           </div>
         </div>
       ))}

@@ -24,7 +24,10 @@ const READING_RULES = [
 
 export default function About() {
   const { scope, overview, config } = usePortal();
-  useTitle(`About the data · ${shortNameOf(config)}`);
+  useTitle(
+    `About the Data: How the ${config.name} Budget Portal Works`,
+    `How the ${config.name} Budget Portal finds its 2027 projects, the API queries it runs, the lines it leaves out and why, and the sources behind every figure.`,
+  );
   return (
     <main className="page main">
       <Await state={scope} what="the portal’s queries">

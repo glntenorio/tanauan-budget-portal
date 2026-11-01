@@ -100,6 +100,7 @@ export function Donut({ slices, total, centerLabel, active, onPick }: {
             strokeDasharray={`${grown ? a.len : 0} ${C}`}
             strokeDashoffset={-a.offset}
             style={{ transitionDelay: `${120 + i * 90}ms` }}
+            data-tip={`${a.label}: ${a.value}${a.sub ? ` · ${a.sub}` : ''}. Click to filter.`}
             onMouseEnter={() => setHover(a.key)}
             onMouseLeave={() => setHover(null)}
             onClick={() => onPick?.(a.key)}
@@ -143,8 +144,14 @@ export function Ring({ share, className = '' }: { share: number; className?: str
   const C = 2 * Math.PI * r;
   return (
     <svg viewBox="0 0 56 56" className={`ring ${className}`} aria-hidden="true">
+      <defs>
+        <linearGradient id="ring-g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#f6cb85" />
+          <stop offset="1" stopColor="#e07f12" />
+        </linearGradient>
+      </defs>
       <circle cx="28" cy="28" r={r} className="ring-track" />
-      <circle cx="28" cy="28" r={r} className="ring-fill" strokeDasharray={`${grown ? Math.min(1, share) * C : 0} ${C}`} />
+      <circle cx="28" cy="28" r={r} className="ring-fill" stroke="url(#ring-g)" strokeDasharray={`${grown ? Math.min(1, share) * C : 0} ${C}`} />
       <text x="28" y="28" className="ring-text">{Math.round(share * 100)}%</text>
     </svg>
   );
@@ -152,7 +159,7 @@ export function Ring({ share, className = '' }: { share: number; className?: str
 
 /* ---------- Horizontal bar list ---------- */
 
-export interface BarItem { key: string; label: string; value: number; to?: string; className?: string; meta?: string }
+export interface BarItem { key: string; label: string; value: number; to?: string; className?: string; meta?: string; tip?: string }
 
 export function BarList({ items, format = php }: { items: BarItem[]; format?: (n: number) => string }) {
   const grown = useGrown();
@@ -170,7 +177,7 @@ export function BarList({ items, format = php }: { items: BarItem[]; format?: (n
             {it.meta && <span className="barlist-meta">{it.meta}</span>}
           </>
         );
-        return <li key={it.key}>{it.to ? <Link to={it.to} className="barlist-row">{body}</Link> : <div className="barlist-row">{body}</div>}</li>;
+        return <li key={it.key}>{it.to ? <Link to={it.to} className="barlist-row" data-tip={it.tip}>{body}</Link> : <div className="barlist-row" data-tip={it.tip}>{body}</div>}</li>;
       })}
     </ol>
   );
@@ -233,6 +240,7 @@ export function AreaChart({ points, format = php, height = 170 }: { points: Poin
               width={(W - pad.l - pad.r) / Math.max(1, points.length - 1)}
               height={H}
               fill="transparent"
+              data-tip={`${p.x}: ${format(p.y)}${p.sub ? ` · ${p.sub}` : ''}`}
               onMouseEnter={() => setHover(i)}
               onMouseLeave={() => setHover(null)}
             />
@@ -259,12 +267,74 @@ const paths: Record<string, ReactNode> = {
   history: <><path d="M3 3v18h18" /><path d="m7 15 4-4 3 3 5-6" /></>,
   about: <><circle cx="12" cy="12" r="9" /><path d="M12 16v-4M12 8h.01" /></>,
   external: <><path d="M7 17 17 7M8 7h9v9" /></>,
+  doc: <><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M9 13h6M9 17h4" /></>,
+  capitol: <><path d="M3 21h18M4 10h16M12 3 4 8h16z" /><path d="M6 10v8M10 10v8M14 10v8M18 10v8" /></>,
+  plus: <><circle cx="12" cy="12" r="9" /><path d="M12 8v8M8 12h8" /></>,
 };
 
-export function Icon({ name }: { name: keyof typeof paths }) {
+export type IconName = keyof typeof paths;
+
+export function Icon({ name }: { name: IconName }) {
   return (
     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       {paths[name]}
     </svg>
+  );
+}
+
+/** One dot per project, coloured by what the House bill did to it. */
+export function DotMatrix({ items }: { items: { key: string; className: string; title: string }[] }) {
+  const grown = useGrown();
+  return (
+    <div className="dots" aria-hidden="true">
+      {items.map((d, i) => (
+        <span key={d.key} className={`dot ${d.className}${grown ? ' is-on' : ''}`} data-tip={d.title} style={{ transitionDelay: `${i * 18}ms` }} />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * One tooltip for the whole portal: any element with data-tip shows it,
+ * on hover or keyboard focus. Positioned at the pointer, kept on screen.
+ */
+export function Tooltip() {
+  const [tip, setTip] = useState<{ text: string; x: number; y: number } | null>(null);
+  useEffect(() => {
+    const find = (t: EventTarget | null) => (t instanceof Element ? t.closest<HTMLElement | SVGElement>('[data-tip]') : null);
+    const show = (el: Element, x: number, y: number) => {
+      const text = el.getAttribute('data-tip');
+      if (text) setTip({ text, x, y });
+    };
+    const onMove = (e: PointerEvent) => {
+      const el = find(e.target);
+      if (el) show(el, e.clientX, e.clientY);
+      else setTip(null);
+    };
+    const onFocus = (e: FocusEvent) => {
+      const el = find(e.target);
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      show(el, r.left + r.width / 2, r.top);
+    };
+    const hide = () => setTip(null);
+    window.addEventListener('pointermove', onMove, { passive: true });
+    window.addEventListener('focusin', onFocus);
+    window.addEventListener('focusout', hide);
+    window.addEventListener('scroll', hide, { passive: true });
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('focusin', onFocus);
+      window.removeEventListener('focusout', hide);
+      window.removeEventListener('scroll', hide);
+    };
+  }, []);
+  if (!tip) return null;
+  const left = Math.min(Math.max(tip.x, 140), window.innerWidth - 140);
+  const below = tip.y < 80;
+  return (
+    <div className={`tip${below ? ' is-below' : ''}`} role="tooltip" style={{ left, top: below ? tip.y + 22 : tip.y - 12 }}>
+      {tip.text}
+    </div>
   );
 }

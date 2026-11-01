@@ -4,7 +4,7 @@ import { shortNameOf } from '../config';
 import { usePortal } from '../lib/portal-context';
 import { date } from '../lib/format';
 import { NATIONAL_URL, SOURCE_CODE_URL } from '../lib/links';
-import { Icon } from './Dash';
+import { Icon, Tooltip } from './Dash';
 import GT_SIDEBAR from '../assets/gt-sidebar.html?raw';
 
 // Imported, so the build gives it a hashed name (safe under long cache headers).
@@ -43,6 +43,19 @@ export function GtLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     try { localStorage.setItem(COLLAPSED_KEY, collapsed ? '1' : '0'); } catch { /* private mode */ }
   }, [collapsed]);
+  // A soft spotlight follows the pointer across dashboard cards.
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce), (hover: none)').matches) return;
+    const onMove = (e: PointerEvent) => {
+      const card = (e.target as Element | null)?.closest?.<HTMLElement>('.dcard, .ocard, .hcard');
+      if (!card) return;
+      const r = card.getBoundingClientRect();
+      card.style.setProperty('--mx', `${e.clientX - r.left}px`);
+      card.style.setProperty('--my', `${e.clientY - r.top}px`);
+    };
+    window.addEventListener('pointermove', onMove, { passive: true });
+    return () => window.removeEventListener('pointermove', onMove);
+  }, []);
   // The sidebar's own collapse button lives in the copied markup.
   useEffect(() => {
     const btn = side.current?.querySelector<HTMLButtonElement>('#sidebarToggle');
@@ -63,7 +76,7 @@ export function GtLayout({ children }: { children: ReactNode }) {
       />
       <div className="gt-panel">
         <div className="m-nav">
-          <a href="https://glentenorio.com/" className="brand">
+          <a href="/" className="brand">
             <div className="brand-mark" aria-hidden="true" />
             <div className="brand-name">glen<b>tenorio</b></div>
           </a>
@@ -73,6 +86,7 @@ export function GtLayout({ children }: { children: ReactNode }) {
         </div>
         {children}
       </div>
+      <Tooltip />
       <button type="button" className={`scrim${open ? ' on' : ''}`} aria-hidden="true" tabIndex={-1} onClick={() => setOpen(false)} />
     </div>
   );
@@ -131,55 +145,96 @@ export function PortalBar() {
   );
 }
 
+/** Links on glentenorio.com, where the portal is hosted: same tab, root-relative. */
+const SITE_LINKS = [
+  { href: '/tools/', label: 'Free web tools' },
+  { href: '/tools/website-qa/', label: 'Website QA Audit' },
+  { href: '/tools/website-screenshot/', label: 'Website Screenshot Tool' },
+  { href: '/blog/', label: 'Blog' },
+  { href: '/about/', label: 'About Glen' },
+];
+const PORTAL_REPO_URL = 'https://github.com/glntenorio/tanauan-budget-portal';
+
 export function Footer() {
   const { config, scope, client } = usePortal();
+  const { pathname } = useLocation();
   const meta = scope.status === 'ready' ? scope.value.meta : null;
+  const name = shortNameOf(config);
   return (
     <footer className="footer">
-      <div className="page footer-inner">
-        <div className="footer-brand">
-          <a className="footer-by" href="https://glentenorio.com" target="_blank" rel="noopener">
-            <span className="footer-by-mark" aria-hidden="true" />
-            <span>glen<b>tenorio</b></span>
-          </a>
-          <p>
-            A citizen project for {shortNameOf(config)}: where the 2027 national budget is set to go, in plain language,
-            with the source behind every figure. Independent, unpaid, and not affiliated with any government office.
-          </p>
+      <div className="footer-inner">
+        <div className="footer-top">
+          <div className="footer-brand">
+            <a className="footer-by" href="/">
+              <span className="footer-by-mark" aria-hidden="true" />
+              <span>glen<b>tenorio</b></span>
+            </a>
+            <p>
+              A citizen project for {name}. As a Filipino citizen, I believe public money should be easy to see and check;
+              this is my small part in that. Independent, unpaid, and not affiliated with any government office.
+            </p>
+          </div>
+          <div className="footer-cta">
+            <a className="button button-light" href="/tools/">More free tools</a>
+            <a className="button button-ghost-dark" href="/contact/">Get in touch</a>
+          </div>
         </div>
-        <p className="footer-source">
-          Source: NEP FY 2027 and House Bill 10858 · via the BetterGov.ph Budget API
-          {meta && <> · data built {date(meta.built_at)}</>}
-        </p>
+
+        <nav className="footer-cols" aria-label="Footer">
+          <div>
+            <p className="footer-h">This portal</p>
+            <ul>
+              {NAV.map((n) => (
+                <li key={n.label}>
+                  <Link to={{ pathname: n.to, hash: n.hash }} onClick={() => !n.hash && pathname === n.to && window.scrollTo(0, 0)}>
+                    {n.label === 'Offices' ? 'Offices and districts' : n.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <p className="footer-h">On glentenorio.com</p>
+            <ul>
+              {SITE_LINKS.map((l) => <li key={l.href}><a href={l.href}>{l.label}</a></li>)}
+            </ul>
+          </div>
+          <div>
+            <p className="footer-h">The data</p>
+            <ul>
+              <li><a href={NATIONAL_URL} target="_blank" rel="noopener">Every project, nationwide <span aria-hidden="true">↗</span></a></li>
+              <li><a href={`${client.base}/docs`} target="_blank" rel="noopener">Budget API and MCP <span aria-hidden="true">↗</span></a></li>
+              <li><a href="https://budget.bettergov.ph/hgab/2027/methodology#disclaimer" target="_blank" rel="noopener">Methodology and notice <span aria-hidden="true">↗</span></a></li>
+              <li><a href="https://bettergov.ph" target="_blank" rel="noopener">BetterGov.ph <span aria-hidden="true">↗</span></a></li>
+            </ul>
+          </div>
+          <div>
+            <p className="footer-h">Open source</p>
+            <ul>
+              <li><a href={PORTAL_REPO_URL} target="_blank" rel="noopener">This portal's code <span aria-hidden="true">↗</span></a></li>
+              <li><a href={SOURCE_CODE_URL} target="_blank" rel="noopener">BetterGov's original <span aria-hidden="true">↗</span></a></li>
+              <li><a href={SOURCE_CODE_URL} target="_blank" rel="noopener">Fork it for your LGU <span aria-hidden="true">↗</span></a></li>
+            </ul>
+          </div>
+        </nav>
+
+        <div className="footer-source">
+          <span className="live-dot" aria-hidden="true" />
+          <span>
+            Source: NEP FY 2027 and House Bill 10858, via the BetterGov.ph Budget API
+            {meta && <> · data built {date(meta.built_at)}</>}
+          </span>
+        </div>
         {meta && <p className="footer-notice">{meta.notice}</p>}
-        <ul className="footer-links">
-          <li>
-            <span className="label">This portal</span>
-            <span>
-              {shortNameOf(config)}, run by{' '}
-              {config.operator.url ? (
-                <a href={config.operator.url} target="_blank" rel="noopener">{config.operator.name}</a>
-              ) : (
-                config.operator.name
-              )}
-              {config.operator.email && (
-                <> · <a href={`mailto:${config.operator.email}`}>{config.operator.email}</a></>
-              )}
-            </span>
-          </li>
-          <li>
-            <span className="label">Every project, nationwide</span>
-            <a href={NATIONAL_URL} target="_blank" rel="noopener">budget.bettergov.ph ↗</a>
-          </li>
-          <li>
-            <span className="label">Data</span>
-            <a href={`${client.base}/docs`} target="_blank" rel="noopener">Budget API and MCP ↗</a>
-          </li>
-          <li>
-            <span className="label">Built on</span>
-            <a href={SOURCE_CODE_URL} target="_blank" rel="noopener">Fork this portal for your LGU or DPWH office ↗</a>
-          </li>
-        </ul>
+
+        <div className="footer-bottom">
+          <span>© {new Date().getFullYear()} {config.operator.name}</span>
+          <span className="footer-legal">
+            <a href="/privacy/">Privacy Policy</a>
+            <span aria-hidden="true">·</span>
+            <a href="/terms/">Terms &amp; Conditions</a>
+          </span>
+        </div>
       </div>
     </footer>
   );

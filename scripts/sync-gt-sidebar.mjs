@@ -19,10 +19,9 @@ let inner = html.slice(html.indexOf('>', start) + 1, end);
 
 inner = inner
   .replace(/<!--[\s\S]*?-->/g, '')
-  // Site links work from any host (the portal is also served from pages.dev).
-  .replace(/href="\/(?!\/)/g, 'href="https://glentenorio.com/')
-  // The portal lives under Tools.
-  .replace(/<a href="https:\/\/glentenorio.com\/tools\/"(?![^>]*class=)/, '<a href="https://glentenorio.com/tools/" class="active" aria-current="page"')
+  // The portal is hosted on glentenorio.com, so site links stay root-relative.
+  // It lives under Tools.
+  .replace(/<a href="\/tools\/"(?![^>]*class=)/, '<a href="/tools/" class="active" aria-current="page"')
   .replace(/\n\s*\n/g, '\n')
   .trim();
 

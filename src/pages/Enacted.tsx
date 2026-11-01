@@ -25,7 +25,10 @@ const LAST = GAA_YEARS[GAA_YEARS.length - 1];
 export default function Enacted() {
   const { config, client, districts } = usePortal();
   const name = shortNameOf(config);
-  useTitle(`Enacted budgets ${FIRST}–${LAST} · ${name}`);
+  useTitle(
+    `${config.name} Budgets ${FIRST}–${LAST}: Every Enacted Program`,
+    `The enacted national budgets for ${config.name} from ${FIRST} to ${LAST}: every program that names the city, year by year, from the General Appropriations Act.`,
+  );
   const places = config.scope.places ?? [];
 
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);

@@ -9,10 +9,65 @@ const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').r
 
 /** The portal's name and description in the HTML itself, for link previews and search engines. */
 function portalHtml(api: string): Plugin {
-  const title = `${portal.name} · FY 2027 budget projects`;
-  const description = `Every FY 2027 project for ${shortNameOf(portal)} in the NEP and the House bill (House Bill 10858), with the source page for each, and the enacted budgets 2020–2026. Data from the BetterGov.ph Budget API.`;
-  const url = portal.siteUrl
-    ? `<link rel="canonical" href="${escape(portal.siteUrl)}" />\n    <meta property="og:url" content="${escape(portal.siteUrl)}" />`
+  const short = shortNameOf(portal);
+  // The home page's head. Other pages set their own at runtime (src/lib/use-title.ts).
+  const title = `${portal.name} 2027 Budget: Every Project, NEP vs House Bill`;
+  const description = `Every 2027 national budget project for ${portal.name}: the NEP against the House bill, what was added or dropped, and the source page for each.`;
+  const base = portal.siteUrl?.replace(/\/+$/, '');
+  const home = base ? `${base}/` : '';
+  const url = base
+    ? `<link rel="canonical" href="${escape(home)}" data-base="${escape(base)}" />\n    <meta property="og:url" content="${escape(home)}" />`
+    : '';
+  // Structured data: the page, the dataset it shows, and the person behind it
+  // (the same @id glentenorio.com's own pages use).
+  const ld = base
+    ? JSON.stringify({
+        '@context': 'https://schema.org',
+        '@graph': [
+          {
+            '@type': 'WebPage',
+            '@id': `${home}#webpage`,
+            url: home,
+            name: title,
+            description,
+            inLanguage: 'en',
+            isPartOf: { '@id': 'https://glentenorio.com/#website' },
+            author: { '@id': 'https://glentenorio.com/#person' },
+            about: { '@id': `${home}#dataset` },
+            breadcrumb: { '@id': `${home}#breadcrumb` },
+            primaryImageOfPage: `${home}og.jpg`,
+          },
+          {
+            '@type': 'BreadcrumbList',
+            '@id': `${home}#breadcrumb`,
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://glentenorio.com/' },
+              { '@type': 'ListItem', position: 2, name: 'Tools', item: 'https://glentenorio.com/tools/' },
+              { '@type': 'ListItem', position: 3, name: `${portal.name} Budget Portal`, item: home },
+            ],
+          },
+          {
+            '@type': 'Dataset',
+            '@id': `${home}#dataset`,
+            name: `${portal.name} 2027 national budget projects`,
+            description: `Every project for ${portal.name} in the FY 2027 National Expenditure Program (NEP) and House Bill 10858, compared line by line, with the enacted budgets (GAA) for 2020 to 2026. Amounts are appropriations as published, not spending.`,
+            url: home,
+            creator: { '@id': 'https://glentenorio.com/#person' },
+            isBasedOn: 'https://budget.bettergov.ph/hgab/2027/overview',
+            isAccessibleForFree: true,
+            inLanguage: 'en',
+            spatialCoverage: { '@type': 'Place', name: `${portal.name}, Batangas, Philippines` },
+            temporalCoverage: '2020/2027',
+            keywords: [`${short} budget`, '2027 national budget', 'NEP', 'House Bill 10858', 'GAA', 'DPWH', 'budget transparency', 'Philippines'],
+          },
+          {
+            '@type': 'Person',
+            '@id': 'https://glentenorio.com/#person',
+            name: 'Glen Tenorio',
+            url: 'https://glentenorio.com/',
+          },
+        ],
+      }).replace(/</g, '\\u003c')
     : '';
   // public/og.jpg (1200×630, rendered from the hero), hash-busted so previews refresh.
   const og = portal.siteUrl && existsSync('public/og.jpg')
@@ -30,7 +85,7 @@ function portalHtml(api: string): Plugin {
         .replaceAll('%PORTAL_NAME%', escape(portal.name))
         .replaceAll('%PORTAL_DESCRIPTION%', escape(description))
         .replaceAll('%PORTAL_API%', escape(api))
-        .replaceAll('%PORTAL_URL_META%', url + og)
+        .replaceAll('%PORTAL_URL_META%', url + og + (ld ? `\n    <script type="application/ld+json">${ld}</script>` : ''))
         .replace('<meta name="twitter:card" content="summary" />', og ? '<meta name="twitter:card" content="summary_large_image" />' : '<meta name="twitter:card" content="summary" />'),
   };
 }
