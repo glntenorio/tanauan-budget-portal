@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import type { BridgeGroup, DatasetInfo, Disclaimer, GroupInfo } from '../api/types';
 import { BRIDGE_GROUPS } from '../api/types';
 import { shortNameOf, type DatasetKey } from '../config';
 import { Await, Disclaimers, ReasonTags, StatusChip } from '../components/Bits';
 import OfficesSection from '../components/OfficesSection';
+import { AreaChart, BarList, Card, CountUp, Donut, Ring } from '../components/Dash';
+import { useGrown } from '../lib/motion';
+import { gaaYearTotals, loadGaa } from '../lib/gaa';
 import { projectsCsv, downloadText } from '../lib/csv';
 import { count, php, phpDelta, plural } from '../lib/format';
 import { usePortal } from '../lib/portal-context';
@@ -85,6 +88,12 @@ function Projects({ scope, datasets }: { scope: ScopeResult; datasets: DatasetIn
     setShown(PAGE);
   };
 
+  /** Filter by status from a chart, and bring the list into view. */
+  const pickStatus = (g: string) => {
+    setParam('status', g);
+    requestAnimationFrame(() => document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  };
+
   // DPWH offices among the rows, largest first, for the Office filter.
   const offices = useMemo(() => {
     const n = new Map<string, number>();
@@ -118,65 +127,78 @@ function Projects({ scope, datasets }: { scope: ScopeResult; datasets: DatasetIn
 
   return (
     <>
-      <section className="hero-band" aria-labelledby="hero-h">
-        <div className="hero-bg" aria-hidden="true" />
-        <div className="hero-inner">
-          <div className="hero-copy">
-            <p className="eyebrow">FY 2027<span className="sep">·</span>NEP and House Bill 10858</p>
-            <h1 id="hero-h">
+      <div className="dash">
+        <header className="banner dcard" style={{ '--i': 0 } as CSSProperties}>
+          <div className="banner-bg" aria-hidden="true" />
+          <div className="banner-copy">
+            <p className="banner-kicker">
+              <span className="live-dot" aria-hidden="true" /> FY 2027<span className="sep">·</span>NEP and House Bill 10858
+            </p>
+            <h1>
               {plural(summary.rows, 'project')} for {name}
-              <span className="hero-h-sub"> in the 2027 national budget</span>
+              <span className="banner-h-sub"> in the 2027 national budget</span>
             </h1>
-            <div className="lede"><Lede summary={summary} /></div>
-            <div className="hero-actions">
-              <a className="button button-primary" href="#projects">See every project</a>
-              {summary.groups.house_only.rows > 0 && (
-                <Link className="button button-glass" to={{ search: '?status=house_only', hash: '#projects' }}>
-                  <span className="status-dot g-house_only" aria-hidden="true" />
-                  {plural(summary.groups.house_only.rows, 'House-only project')}
-                </Link>
-              )}
-            </div>
+            <div className="banner-lede"><Lede summary={summary} /></div>
           </div>
-          <Compare summary={summary} programName={programName} />
-        </div>
-      </section>
-
-      <OfficesSection />
-
-      <section className="section" aria-labelledby="groups-h">
-        <h2 id="groups-h" className="section-h">What the House bill did to them</h2>
-        <div className="dist" aria-hidden="true">
-          {BRIDGE_GROUPS.filter((g) => summary.groups[g].rows).map((g) => (
-            <span key={g} className={`dist-seg g-${g}`} style={{ flexGrow: summary.groups[g].rows }} />
-          ))}
-        </div>
-        <div className="groups" role="group" aria-label="Filter by status">
-          {BRIDGE_GROUPS.map((g) => {
-            const cell = summary.groups[g];
-            const info = groups[g];
-            const active = status === g;
-            return (
-              <button
-                key={g}
-                type="button"
-                className={`group-tile${active ? ' active' : ''}`}
-                disabled={!cell.rows}
-                aria-pressed={active}
-                title={info.help}
-                onClick={() => setParam('status', active ? '' : g)}
-              >
-                <span className="group-label"><span className={`status-dot g-${g}`} aria-hidden="true" />{info.label}</span>
-                {info.sub && <span className="label">{info.sub}</span>}
-                <span className="group-count num">{count(cell.rows)}</span>
-                <span className="group-php num">{groupAmount(g, cell)}</span>
+          <div className="banner-actions">
+            <a className="button button-light" href="#projects">See every project</a>
+            {summary.groups.house_only.rows > 0 && (
+              <button type="button" className="button button-glass" onClick={() => pickStatus('house_only')}>
+                <span className="status-dot g-house_only" aria-hidden="true" />
+                {plural(summary.groups.house_only.rows, 'House-only project')}
               </button>
-            );
-          })}
-        </div>
-      </section>
+            )}
+          </div>
+        </header>
 
-      <section className="section" id="projects" aria-labelledby="list-h">
+        <Kpis summary={summary} programName={programName} />
+
+        <Card index={5} className="span-7" kicker="Compared, never added" title="NEP against the House bill">
+          <Compare summary={summary} />
+        </Card>
+
+        <Card index={6} className="span-5" kicker="Click a slice to filter" title="What the House bill did">
+          <Donut
+            total={summary.rows}
+            centerLabel="projects"
+            active={status || undefined}
+            onPick={(g) => pickStatus(status === g ? '' : g)}
+            slices={BRIDGE_GROUPS.filter((g) => summary.groups[g].rows).map((g) => ({
+              key: g,
+              label: groups[g].label,
+              value: summary.groups[g].rows,
+              sub: groupAmount(g, summary.groups[g]),
+              className: `g-${g}`,
+            }))}
+          />
+        </Card>
+
+        <Card index={7} className="span-7" kicker="By House bill amount" title="Largest projects" action={<a className="dcard-link" href="#projects">All {count(all.length)} →</a>}>
+          <BarList
+            items={[...all]
+              .sort((a, b) => (b.house_php ?? b.nep_php ?? 0) - (a.house_php ?? a.nep_php ?? 0))
+              .slice(0, 7)
+              .map((p) => ({
+                key: p.key,
+                label: shortTitle(p.title),
+                value: p.house_php ?? p.nep_php ?? 0,
+                to: `/projects/${p.dataset}/${encodeURIComponent(p.id)}`,
+                className: `fill-${p.bridge_group}`,
+                meta: p.status_label,
+              }))}
+          />
+        </Card>
+
+        <Card index={8} className="span-5" kicker="Enacted, not spent" title="Budgets 2020–2026" action={<Link className="dcard-link" to="/gaa">Open →</Link>}>
+          <EnactedTrend />
+        </Card>
+
+        <div className="span-12 dash-offices" id="offices">
+          <OfficesSection />
+        </div>
+      </div>
+
+      <section className="section dcard dcard-table" id="projects" aria-labelledby="list-h" style={{ '--i': 9 } as CSSProperties}>
         <div className="list-head">
           <h2 id="list-h" className="section-h">
             {narrowed ? `${count(filtered.length)} of ${plural(all.length, 'project')}` : `Every project (${count(all.length)})`}
@@ -303,50 +325,121 @@ function Lede({ summary }: { summary: Summary }) {
   );
 }
 
-/** The two versions on one scale: compared, never added. Each bar splits off the lines found in only that version. */
-function Compare({ summary, programName }: { summary: Summary; programName: (k: DatasetKey) => string }) {
+/** "Construction of Multi-Purpose Building, Barangay X, Tanauan City, Batangas" → without the city and province. */
+function shortTitle(t: string): string {
+  return t.replace(/,?\s*Tanauan City,?\s*Batangas.*$/i, '').replace(/,?\s*Batangas\s*$/i, '');
+}
+
+function Kpis({ summary, programName }: { summary: Summary; programName: (k: DatasetKey) => string }) {
+  const grown = useGrown();
+  const programs = (Object.entries(summary.byDataset) as [DatasetKey, { rows: number }][]).sort((a, b) => b[1].rows - a[1].rows);
   const max = Math.max(summary.nep.php, summary.house.php, 1);
-  const programs = (Object.entries(summary.byDataset) as [DatasetKey, { rows: number }][])
-    .sort((a, b) => b[1].rows - a[1].rows)
-    .map(([k, c]) => `${programName(k)} ${count(c.rows)}`)
-    .join(' · ');
+  const houseOnly = summary.groups.house_only;
+  const diff = summary.house.php - summary.nep.php;
+  return (
+    <>
+      <div className="dcard kpi span-3" style={{ '--i': 1 } as CSSProperties}>
+        <p className="kpi-label">Projects</p>
+        <p className="kpi-value num"><CountUp value={summary.rows} format={count} /></p>
+        <div className="kpi-stack" aria-hidden="true">
+          {programs.map(([k, c], i) => (
+            <span key={k} className={`kpi-stack-seg s${i}`} style={{ flexGrow: grown ? c.rows : 0.0001 }} />
+          ))}
+        </div>
+        <p className="kpi-sub">{programs.map(([k, c]) => `${programName(k)} ${count(c.rows)}`).join(' · ')}</p>
+      </div>
+      <div className="dcard kpi span-3" style={{ '--i': 2 } as CSSProperties}>
+        <p className="kpi-label">NEP <span className="muted">· proposed</span></p>
+        <p className="kpi-value num"><CountUp value={summary.nep.php} format={php} /></p>
+        <div className="kpi-bar" aria-hidden="true"><span className="k-nep" style={{ width: grown ? `${(summary.nep.php / max) * 100}%` : 0 }} /></div>
+        <p className="kpi-sub">{plural(summary.nep.rows, 'project')}</p>
+      </div>
+      <div className="dcard kpi kpi-accent span-3" style={{ '--i': 3 } as CSSProperties}>
+        <p className="kpi-label">House bill <span className="muted">· as passed</span></p>
+        <p className="kpi-value num"><CountUp value={summary.house.php} format={php} /></p>
+        <div className="kpi-bar" aria-hidden="true"><span className="k-house" style={{ width: grown ? `${(summary.house.php / max) * 100}%` : 0 }} /></div>
+        <p className="kpi-sub">
+          {plural(summary.house.rows, 'project')}
+          {diff !== 0 && <span className={`kpi-delta ${diff > 0 ? 'up' : 'down'}`}>{phpDelta(diff)} vs NEP</span>}
+        </p>
+      </div>
+      <div className="dcard kpi kpi-pop span-3" style={{ '--i': 4 } as CSSProperties}>
+        <div className="kpi-row">
+          <div>
+            <p className="kpi-label">House bill only</p>
+            <p className="kpi-value num"><CountUp value={houseOnly.rows} format={count} /></p>
+          </div>
+          <Ring share={summary.house.php ? houseOnly.house_php / summary.house.php : 0} className="ring-pop" />
+        </div>
+        <p className="kpi-sub">{php(houseOnly.house_php)} of the House total · candidates to check</p>
+      </div>
+    </>
+  );
+}
+
+/** The two versions on one scale. Each bar splits off the lines found in only that version. */
+function Compare({ summary }: { summary: Summary }) {
+  const grown = useGrown();
+  const max = Math.max(summary.nep.php, summary.house.php, 1);
   const nepOnly = summary.groups.nep_only.nep_php;
   const houseOnly = summary.groups.house_only.house_php;
-  const pct = (v: number) => `${(Math.max(v, 0) / max) * 100}%`;
+  const pct = (v: number) => (grown ? `${(Math.max(v, 0) / max) * 100}%` : '0%');
+  const rows = [
+    { key: 'nep', name: 'NEP', sub: `Proposed by the President · ${plural(summary.nep.rows, 'project')}`, total: summary.nep.php, both: summary.nep.php - nepOnly, only: nepOnly, onlyClass: 'seg-nep-only' },
+    { key: 'house', name: 'House bill', sub: `As the House passed it · ${plural(summary.house.rows, 'project')}`, total: summary.house.php, both: summary.house.php - houseOnly, only: houseOnly, onlyClass: 'seg-house-only' },
+  ];
   return (
-    <aside className="compare" aria-label="The two versions of the 2027 budget">
-      <p className="compare-kicker">Two versions of one budget</p>
-      <dl className="compare-rows">
-        <div className="compare-row k-nep">
-          <dt>
-            <span className="compare-name">NEP</span>
-            <span className="compare-sub">Proposed by the President · {plural(summary.nep.rows, 'project')}</span>
-          </dt>
-          <dd className="compare-amount num">{php(summary.nep.php)}</dd>
-          <dd className="compare-track" aria-hidden="true">
-            <span className="seg seg-both" style={{ width: pct(summary.nep.php - nepOnly) }} />
-            <span className="seg seg-nep-only" style={{ width: pct(nepOnly) }} />
-          </dd>
+    <div className="cmp">
+      {rows.map((r, i) => (
+        <div key={r.key} className={`cmp-row k-${r.key}`}>
+          <div className="cmp-head">
+            <span className="cmp-name">{r.name}<span className="cmp-sub">{r.sub}</span></span>
+            <span className="cmp-amount num"><CountUp value={r.total} format={php} /></span>
+          </div>
+          <div className="cmp-track" aria-hidden="true">
+            <span className="seg seg-both" style={{ width: pct(r.both), transitionDelay: `${200 + i * 150}ms` }} title={`In both versions: ${php(r.both)}`} />
+            {r.only > 0 && <span className={`seg ${r.onlyClass}`} style={{ width: pct(r.only), transitionDelay: `${500 + i * 150}ms` }} title={`${r.key === 'house' ? 'House bill only' : 'NEP only'}: ${php(r.only)}`} />}
+          </div>
         </div>
-        <div className="compare-row k-house">
-          <dt>
-            <span className="compare-name">House bill</span>
-            <span className="compare-sub">As the House passed it · {plural(summary.house.rows, 'project')}</span>
-          </dt>
-          <dd className="compare-amount num">{php(summary.house.php)}</dd>
-          <dd className="compare-track" aria-hidden="true">
-            <span className="seg seg-both" style={{ width: pct(summary.house.php - houseOnly) }} />
-            <span className="seg seg-house-only" style={{ width: pct(houseOnly) }} />
-          </dd>
-        </div>
-      </dl>
-      <ul className="compare-key">
+      ))}
+      <ul className="cmp-key">
         <li><span className="sw sw-both" />In both versions</li>
         {houseOnly > 0 && <li><span className="sw sw-house-only" />House bill only · {php(houseOnly)}</li>}
         {nepOnly > 0 && <li><span className="sw sw-nep-only" />NEP only · {php(nepOnly)}</li>}
       </ul>
-      <p className="compare-foot">{programs}<span className="sep">·</span>Lines in one version only are candidates to check, not findings.</p>
-    </aside>
+      <p className="cmp-foot">Lines found in one version only are candidates to check, not findings.</p>
+    </div>
+  );
+}
+
+/** The enacted budgets by year, loaded on demand (searches every department once, then cached). */
+function EnactedTrend() {
+  const { client, config } = usePortal();
+  const [state, setState] = useState<{ points: { x: string; y: number; sub: string }[] } | { error: string } | null>(null);
+  useEffect(() => {
+    let live = true;
+    loadGaa(client, config)
+      .then((g) => live && setState({ points: gaaYearTotals(g.rows).map((t) => ({ x: String(t.year), y: t.amount, sub: plural(t.programs, 'program') })) }))
+      .catch((e: Error) => live && setState({ error: e.message }));
+    return () => { live = false; };
+  }, [client, config]);
+  if (!state) return <div className="skeleton" aria-label="Loading the enacted budgets" role="status"><span /><span /><span /></div>;
+  if ('error' in state) return <p className="state state-error">Could not load: {state.error}</p>;
+  const peak = state.points.reduce((a, b) => (b.y > a.y ? b : a), state.points[0]);
+  const first = state.points[0];
+  const last = state.points[state.points.length - 1];
+  return (
+    <>
+      <AreaChart points={state.points} />
+      {peak && (
+        <dl className="trend-stats">
+          <div className="is-peak"><dt>Peak · {peak.x}</dt><dd className="num">{php(peak.y)}</dd></div>
+          <div><dt>{first.x}</dt><dd className="num">{php(first.y)}</dd></div>
+          <div><dt>{last.x}</dt><dd className="num">{php(last.y)}</dd></div>
+        </dl>
+      )}
+      <p className="trend-note">Programs whose names place them in {config.shortName ?? config.name}. Each year stands alone; years are never added.</p>
+    </>
   );
 }
 

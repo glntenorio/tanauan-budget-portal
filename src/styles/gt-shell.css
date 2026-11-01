@@ -1,0 +1,227 @@
+/* =============================================================
+   glentenorio.com's app shell: the sidebar and the rounded content
+   panel, ported from the site's assets/css/style.css. Scoped to
+   .gt-layout so it can't reach the portal's own classes.
+   The page scrolls (not the panel), so sticky headers and anchor
+   links behave as they do on any page.
+   ============================================================= */
+
+.gt-layout {
+  --bg-1: #FAFAFA;
+  --bg-2: #F5F5F5;
+  --bg-3: #EBEBEB;
+  --text: #1A1A1A;
+  --subtext: #7D7D7D;
+  --stroke: #E0E0E0;
+  --gt-accent: #54734e;
+  --gt-radius: 8px;
+  --r-md: 16px;
+  --sidebar: 232px;
+  --gt-ease: cubic-bezier(.075, .82, .165, 1);
+  --display: 'Geist', 'DM Sans', system-ui, sans-serif;
+
+  display: grid;
+  grid-template-columns: var(--sidebar) minmax(0, 1fr);
+  min-height: 100vh;
+  background: var(--bg-2);
+  transition: grid-template-columns .45s var(--gt-ease);
+}
+.gt-layout.sidebar-collapsed { --sidebar: 56px; }
+body { background: #F5F5F5; }
+body.locked { overflow: hidden; }
+
+/* ---- Sidebar ---- */
+.gt-layout .side {
+  position: sticky; top: 0; align-self: start; height: 100vh;
+  padding: 24px 16px;
+  background: var(--bg-2);
+  display: flex; flex-direction: column; gap: 32px;
+  z-index: 40;
+  overflow: hidden;
+  font-family: var(--font-body);
+  color: var(--text);
+}
+.gt-layout .side a { color: inherit; text-decoration: none; }
+.gt-layout .brand { display: flex; align-items: center; gap: 8px; color: var(--text); text-decoration: none; }
+.gt-layout .brand-mark {
+  width: 30px; height: 30px; flex: none;
+  border-radius: var(--gt-radius);
+  background: var(--gt-accent);
+  display: grid; place-items: center;
+  position: relative;
+}
+.gt-layout .brand-mark::before {
+  content: ""; width: 12px; height: 12px;
+  border: 2.5px solid #fff; border-radius: 3px;
+  transform: rotate(45deg);
+  transition: opacity .2s ease;
+}
+.gt-layout .brand-mark::after {
+  content: "GT";
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  font-family: var(--display); font-weight: 800;
+  font-size: 12px; letter-spacing: -0.02em; color: #fff;
+  opacity: 0; transition: opacity .2s ease;
+}
+.gt-layout .side.collapsed .brand-mark::before { opacity: 0; }
+.gt-layout .side.collapsed .brand-mark::after { opacity: 1; }
+.gt-layout .brand-name {
+  font-family: var(--display); font-weight: 800;
+  font-size: 17px; letter-spacing: -0.02em; margin-top: 2px;
+  white-space: nowrap; overflow: hidden; max-width: 200px;
+  transition: opacity .2s ease, max-width .4s var(--gt-ease);
+}
+.gt-layout .brand-name b { color: var(--gt-accent); font-weight: 800; }
+
+.gt-layout .nav { display: flex; flex-direction: column; gap: 2px; }
+.gt-layout .nav a {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 12px; border-radius: var(--gt-radius);
+  font-size: 14px; color: var(--text); font-weight: 500;
+  transition: background-color .4s var(--gt-ease);
+}
+.gt-layout .nav a:hover, .gt-layout .nav a.active { background: var(--bg-3); }
+.gt-layout .nav .chip {
+  font-size: 11px; font-weight: 600; color: var(--subtext);
+  background: var(--bg-1); border: 1px solid var(--stroke);
+  border-radius: 999px; padding: 1px 8px;
+  margin-left: auto; flex-shrink: 0;
+}
+.gt-layout .nav-icon { display: flex; align-items: center; justify-content: center; width: 16px; height: 16px; flex-shrink: 0; color: var(--subtext); transition: color .2s; }
+.gt-layout .nav a:hover .nav-icon, .gt-layout .nav a.active .nav-icon { color: var(--text); }
+.gt-layout .nav-text { flex: 1; white-space: nowrap; overflow: hidden; max-width: 200px; transition: opacity .2s ease, max-width .4s var(--gt-ease); }
+
+.gt-layout .side-card {
+  margin-top: auto;
+  padding: 16px;
+  background: var(--bg-1);
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-md);
+}
+.gt-layout .side-card h4 { margin: 0 0 4px; font-family: var(--display); font-size: 15px; font-weight: 600; letter-spacing: -0.015em; }
+.gt-layout .side-card p { margin: 0 0 12px; font-size: 12.5px; color: var(--subtext); line-height: 1.5; }
+.gt-layout .side-cta { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 600; color: var(--gt-accent) !important; }
+
+.gt-layout .socials { display: flex; gap: 8px; padding: 0 8px; }
+.gt-layout .socials a {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: var(--gt-radius);
+  color: var(--subtext); border: 1px solid var(--stroke); background: var(--bg-1);
+  transition: color .25s, border-color .25s, background .25s;
+}
+.gt-layout .socials a:hover { color: var(--text); border-color: transparent; background: var(--bg-3); }
+.gt-layout .socials svg { width: 17px; height: 17px; }
+
+.gt-layout .side-legal { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; padding: 0 8px; }
+.gt-layout .side-legal a, .gt-layout .side-legal span { font-size: 12px; color: var(--subtext); }
+.gt-layout .side-legal a:hover { color: var(--text); }
+
+.gt-layout .side-card, .gt-layout .side-legal, .gt-layout .socials {
+  max-height: 300px; overflow: hidden;
+  transition: max-height .4s var(--gt-ease), opacity .2s ease;
+}
+
+.gt-layout .sidebar-toggle {
+  align-self: flex-end;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent;
+  border: 1px solid var(--stroke); border-radius: 50%;
+  cursor: pointer; color: var(--subtext); flex-shrink: 0;
+  transition: background-color .2s, color .2s, border-color .2s;
+}
+.gt-layout .sidebar-toggle:hover { background: var(--bg-3); color: var(--text); border-color: transparent; }
+.gt-layout .sidebar-toggle .toggle-chevron { display: inline-block; font-size: 15px; line-height: 1; transition: transform .45s var(--gt-ease); }
+
+/* Collapsed: an icon strip */
+.gt-layout .side.collapsed { padding: 24px 8px; gap: 24px; }
+.gt-layout .side.collapsed .brand { justify-content: center; gap: 0; }
+.gt-layout .side.collapsed .brand-name,
+.gt-layout .side.collapsed .nav-text { opacity: 0; max-width: 0; pointer-events: none; }
+.gt-layout .side.collapsed .nav .chip { display: none; }
+.gt-layout .side.collapsed .nav a { justify-content: center; padding: 8px; gap: 0; }
+.gt-layout .side.collapsed .side-card,
+.gt-layout .side.collapsed .side-legal,
+.gt-layout .side.collapsed .socials { max-height: 0; opacity: 0; pointer-events: none; }
+.gt-layout .side.collapsed .toggle-chevron { transform: rotate(180deg); }
+.gt-layout .side.collapsed .sidebar-toggle { align-self: center; }
+
+/* ---- The panel the portal sits in ---- */
+.gt-panel {
+  min-width: 0;
+  margin: 8px;
+  min-height: calc(100dvh - 16px);
+  background: var(--bg-1);
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-md);
+  overflow: clip;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Mobile top bar + drawer */
+.gt-layout .m-nav {
+  display: none;
+  position: sticky; top: 0; z-index: 30;
+  padding: 8px 16px;
+  background: var(--bg-1);
+  align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--stroke);
+}
+.gt-layout .m-burger {
+  width: 38px; height: 38px; display: grid; place-items: center;
+  margin-right: -8px; border: 0; background: transparent; color: var(--text); cursor: pointer;
+}
+.gt-layout .m-burger span { display: block; width: 16px; height: 1.5px; background: var(--text); position: relative; transition: background .2s; }
+.gt-layout .m-burger span::before, .gt-layout .m-burger span::after {
+  content: ""; position: absolute; left: 0; width: 16px; height: 1.5px; background: var(--text);
+  transition: transform .32s var(--gt-ease);
+}
+.gt-layout .m-burger span::before { top: -5px; }
+.gt-layout .m-burger span::after { top: 5px; }
+.gt-layout .m-burger.open span { background: transparent; }
+.gt-layout .m-burger.open span::before { transform: translateY(5px) rotate(45deg); }
+.gt-layout .m-burger.open span::after { transform: translateY(-5px) rotate(-45deg); }
+.gt-layout .scrim {
+  position: fixed; inset: 0; border: 0; padding: 0;
+  background: rgba(0, 0, 0, .45);
+  opacity: 0; pointer-events: none; transition: opacity .6s var(--gt-ease); z-index: 35;
+}
+
+@media (min-width: 931px) {
+  .gt-layout .side { overflow-y: auto; scrollbar-width: none; }
+  .gt-layout .side::-webkit-scrollbar { display: none; }
+}
+@media (min-width: 931px) and (max-height: 820px) {
+  .gt-layout .side { gap: 24px; padding-top: 16px; padding-bottom: 16px; }
+  .gt-layout .nav a { padding-top: 6px; padding-bottom: 6px; }
+}
+@media (min-width: 931px) and (max-height: 700px) {
+  .gt-layout .side { gap: 16px; }
+  .gt-layout .side-card { display: none; }
+}
+
+@media (max-width: 930px) {
+  .gt-layout, .gt-layout.sidebar-collapsed { grid-template-columns: 1fr; --sidebar: 232px; background: var(--bg-1); }
+  .gt-layout .side, .gt-layout .side.collapsed {
+    position: fixed; inset: 0;
+    height: 100dvh; width: min(86vw, 340px);
+    padding: 24px 16px; gap: 32px;
+    border-right: 1px solid var(--stroke);
+    transform: translateX(-100%);
+    transition: transform .6s var(--gt-ease);
+    z-index: 50; overflow-y: auto;
+  }
+  .gt-layout .side.open { transform: translateX(0); }
+  .gt-layout .side .sidebar-toggle { display: none; }
+  .gt-layout .side.collapsed .brand-name, .gt-layout .side.collapsed .nav-text { opacity: 1; max-width: 200px; }
+  .gt-layout .side.collapsed .side-card, .gt-layout .side.collapsed .side-legal, .gt-layout .side.collapsed .socials { max-height: 300px; opacity: 1; pointer-events: auto; }
+  .gt-layout .m-nav { display: flex; }
+  .gt-layout .scrim.on { opacity: 1; pointer-events: auto; }
+  .gt-panel { margin: 0; border: 0; border-radius: 0; overflow: visible; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gt-layout, .gt-layout .side, .gt-layout .scrim { transition: none; }
+}

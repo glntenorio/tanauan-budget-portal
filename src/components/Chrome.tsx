@@ -1,75 +1,132 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { shortNameOf } from '../config';
 import { usePortal } from '../lib/portal-context';
 import { date } from '../lib/format';
 import { NATIONAL_URL, SOURCE_CODE_URL } from '../lib/links';
+import { Icon } from './Dash';
+import GT_SIDEBAR from '../assets/gt-sidebar.html?raw';
 
-const BETTERGOV_LOGO = '/brand/bettergov-horizontal-primary.png';
+// Imported, so the build gives it a hashed name (safe under long cache headers).
+import BETTERGOV_LOGO from '../assets/bettergov-horizontal-primary.webp';
 
 const NAV = [
-  { to: '/', hash: '', label: '2027 projects' },
-  { to: '/', hash: '#offices', label: 'Offices and districts' },
-  { to: '/gaa', hash: '', label: 'Budgets 2020–2026' },
-  { to: '/about', hash: '', label: 'About the data' },
-];
+  { to: '/', hash: '', label: 'Overview', icon: 'overview' },
+  { to: '/', hash: '#projects', label: 'All projects', icon: 'projects' },
+  { to: '/', hash: '#offices', label: 'Offices', icon: 'offices' },
+  { to: '/gaa', hash: '', label: 'Budgets 2020–2026', icon: 'history' },
+  { to: '/about', hash: '', label: 'About the data', icon: 'about' },
+] as const;
 
-export function Masthead() {
-  const { config } = usePortal();
+const COLLAPSED_KEY = 'gt-sidebar-collapsed'; // shared with glentenorio.com's main.js
+
+/**
+ * glentenorio.com's layout: its sidebar (copied from the site by
+ * scripts/sync-gt-sidebar.mjs) and the rounded content panel the portal sits in.
+ */
+export function GtLayout({ children }: { children: ReactNode }) {
   const { pathname, hash } = useLocation();
-  // The header stays put and tightens once the page scrolls.
+  const side = useRef<HTMLElement>(null);
+  // The drawer is open for the page it was opened on; navigating closes it.
+  const here = pathname + hash;
+  const [openAt, setOpenAt] = useState<string | null>(null);
+  const open = openAt === here;
+  const setOpen = (v: boolean | ((o: boolean) => boolean)) => setOpenAt((typeof v === 'function' ? v(open) : v) ? here : null);
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem(COLLAPSED_KEY) === '1'; } catch { return false; }
+  });
+
+  useEffect(() => {
+    document.body.classList.toggle('locked', open);
+    return () => document.body.classList.remove('locked');
+  }, [open]);
+  useEffect(() => {
+    try { localStorage.setItem(COLLAPSED_KEY, collapsed ? '1' : '0'); } catch { /* private mode */ }
+  }, [collapsed]);
+  // The sidebar's own collapse button lives in the copied markup.
+  useEffect(() => {
+    const btn = side.current?.querySelector<HTMLButtonElement>('#sidebarToggle');
+    if (!btn) return;
+    const onClick = () => setCollapsed((c) => !c);
+    btn.addEventListener('click', onClick);
+    btn.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+    return () => btn.removeEventListener('click', onClick);
+  }, [collapsed]);
+
+  return (
+    <div className={`gt-layout${collapsed ? ' sidebar-collapsed' : ''}`}>
+      <aside
+        ref={side}
+        className={`side${collapsed ? ' collapsed' : ''}${open ? ' open' : ''}`}
+        id="drawer"
+        dangerouslySetInnerHTML={{ __html: GT_SIDEBAR }}
+      />
+      <div className="gt-panel">
+        <div className="m-nav">
+          <a href="https://glentenorio.com/" className="brand">
+            <div className="brand-mark" aria-hidden="true" />
+            <div className="brand-name">glen<b>tenorio</b></div>
+          </a>
+          <button type="button" className={`m-burger${open ? ' open' : ''}`} aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+            <span />
+          </button>
+        </div>
+        {children}
+      </div>
+      <button type="button" className={`scrim${open ? ' on' : ''}`} aria-hidden="true" tabIndex={-1} onClick={() => setOpen(false)} />
+    </div>
+  );
+}
+
+/** The portal's own header inside the panel: name, live badge, section tabs. */
+export function PortalBar() {
+  const { config, scope } = usePortal();
+  const { pathname, hash } = useLocation();
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
+    const onScroll = () => setScrolled(window.scrollY > 12);
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+  const meta = scope.status === 'ready' ? scope.value.meta : null;
+  const projects = scope.status === 'ready' ? scope.value.projects.length : null;
   return (
-    <header className={`masthead${scrolled ? ' is-scrolled' : ''}`}>
-      <div className="page masthead-main">
-        <Link to="/" className="masthead-title" onClick={() => pathname === '/' && window.scrollTo(0, 0)}>
-          {config.logo ? (
-            <img src={config.logo} alt="" className="masthead-logo" />
-          ) : (
-            <svg className="masthead-mark" viewBox="0 0 32 32" aria-hidden="true">
-              <defs>
-                <linearGradient id="mark-g" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                  <stop offset="0" stopColor="#6a8d5f" />
-                  <stop offset="1" stopColor="#44603c" />
-                </linearGradient>
-              </defs>
-              <rect width="32" height="32" rx="8" fill="url(#mark-g)" />
-              <rect x="11" y="11" width="10" height="10" rx="2.5" fill="none" stroke="#fff" strokeWidth="2.6" transform="rotate(45 16 16)" />
-            </svg>
-          )}
+    <header className={`pbar${scrolled ? ' is-scrolled' : ''}`}>
+      <div className="pbar-top">
+        <Link to="/" className="pbar-title" onClick={() => pathname === '/' && window.scrollTo(0, 0)}>
+          <span className="pbar-icon" aria-hidden="true"><Icon name="history" /></span>
           <span>
-            <span className="masthead-name">{config.name}</span>
-            <span className="masthead-kicker">Budget portal <span aria-hidden="true">·</span> by glen<b>tenorio</b></span>
+            <span className="pbar-name">{config.name} Budget Portal</span>
+            <span className="pbar-sub">
+              <span className="live-dot" aria-hidden="true" /> Live from the BetterGov.ph Budget API
+              {meta && <> · data built {date(meta.built_at)}</>}
+            </span>
           </span>
         </Link>
-        <nav className="mainnav" aria-label="Sections">
-          {NAV.map((n) => {
-            const active = pathname === n.to && (n.hash ? hash === n.hash : hash !== '#offices');
-            return (
-              <Link
-                key={n.label}
-                to={{ pathname: n.to, hash: n.hash }}
-                className={active ? 'active' : undefined}
-                aria-current={active ? 'page' : undefined}
-                // "Projects" from further down the same page goes back to the top.
-                onClick={() => !n.hash && pathname === n.to && window.scrollTo(0, 0)}
-              >
-                {n.label}
-              </Link>
-            );
-          })}
-        </nav>
-        <a className="masthead-with" href="https://bettergov.ph" target="_blank" rel="noopener">
+        <a className="pbar-data" href="https://bettergov.ph" target="_blank" rel="noopener">
           <span className="label">Data from</span>
-          <img src={BETTERGOV_LOGO} alt="BetterGov.ph" width="128" height="28" />
+          <img src={BETTERGOV_LOGO} alt="BetterGov.ph" width="110" height="24" />
         </a>
       </div>
+      <nav className="ptabs" aria-label="Portal sections">
+        {NAV.map((n) => {
+          const active = pathname === n.to && (n.hash ? hash === n.hash : !['#offices', '#projects'].includes(hash));
+          return (
+            <Link
+              key={n.label}
+              to={{ pathname: n.to, hash: n.hash }}
+              className={active ? 'active' : undefined}
+              aria-current={active ? 'page' : undefined}
+              onClick={() => !n.hash && pathname === n.to && window.scrollTo(0, 0)}
+            >
+              <Icon name={n.icon} />
+              <span>{n.label}</span>
+              {n.hash === '#projects' && projects != null && <span className="ptab-chip num">{projects}</span>}
+            </Link>
+          );
+        })}
+      </nav>
     </header>
   );
 }

@@ -14,7 +14,8 @@
     "lint": "eslint .",
     "deploy:cloudflare": "npm run build && wrangler deploy",
     "build:poster": "tsx scripts/build-poster.ts",
-    "deploy": "sh scripts/deploy-pages.sh"
+    "deploy": "sh scripts/deploy-pages.sh",
+    "publish:glentenorio": "sh scripts/publish-glentenorio.sh"
   },
   "dependencies": {
     "react": "^19.2.5",

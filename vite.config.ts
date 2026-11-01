@@ -39,6 +39,8 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
   const api = (env.VITE_API_BASE || portal.api || DEFAULT_API).replace(/\/+$/, '');
   return {
+    // PORTAL_BASE=/tools/tanauan-budget-portal/ builds for a sub-path of another site.
+    base: process.env.PORTAL_BASE || '/',
     plugins: [react(), portalHtml(api)],
     server: {
       host: '0.0.0.0',

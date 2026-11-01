@@ -13,7 +13,7 @@ export default defineConfig({
     name: "Glen Tenorio",
     url: "https://glentenorio.com"
   },
-  siteUrl: "https://tanauan-budget-portal.pages.dev",
+  siteUrl: "https://glentenorio.com/tools/tanauan-budget-portal",
   buildYourOwnStrip: false,
   scope: {
     offices: [],
