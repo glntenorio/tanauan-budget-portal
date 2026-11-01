@@ -4,7 +4,7 @@
 
    Brand: sage #54734e (gradient #6a8d5f → #44603c), near-black
    #091315, Geist display, DM Sans body, 8/16/24 radii.
-   Taal: the banner is Taal Lake at dusk; its sunset marigold marks
+   Taal: the banner is a photo of Taal Lake at dusk; its sunset marigold marks
    the lines a reader should check ("House bill only").
    Motion: cards rise in, figures count up, bars grow. All of it is
    off under prefers-reduced-motion.
@@ -161,13 +161,14 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.03em; }
   inset: 0;
   z-index: -1;
   background:
-    linear-gradient(90deg, rgba(9, 19, 21, 0.88) 0%, rgba(9, 19, 21, 0.62) 45%, rgba(9, 19, 21, 0.1) 100%),
-    url("../assets/taal.svg") center 64% / cover no-repeat;
+    linear-gradient(90deg, rgba(9, 19, 21, 0.9) 0%, rgba(9, 19, 21, 0.78) 45%, rgba(9, 19, 21, 0.42) 75%, rgba(9, 19, 21, 0.2) 100%),
+    linear-gradient(180deg, rgba(9, 19, 21, 0.35) 0%, rgba(9, 19, 21, 0) 45%, rgba(9, 19, 21, 0.4) 100%),
+    url("../assets/taal-dusk.webp") center 46% / cover no-repeat;
   transform: scale(1.04);
   animation: drift 24s ease-in-out infinite alternate;
 }
 @keyframes drift { from { transform: scale(1.04) translateX(0); } to { transform: scale(1.1) translateX(-1.5%); } }
-.banner-kicker { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #f3c27a; }
+.banner-kicker { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #f7d08f; }
 .banner-kicker .sep { color: rgba(255, 255, 255, 0.4); padding: 0 2px; }
 .banner h1 { font-size: clamp(32px, 4.2vw, 52px); font-weight: 800; letter-spacing: -0.045em; line-height: 1; color: #fff; text-wrap: balance; }
 .banner-h-sub { display: block; margin-top: 8px; font-size: 0.5em; font-weight: 600; letter-spacing: -0.025em; color: rgba(255, 255, 255, 0.7); }
@@ -443,13 +444,13 @@ a.barlist-row:hover .barlist-fill { filter: brightness(1.06) saturate(1.15); }
 .banner .button-light:hover { background: var(--accent-tint); border-color: var(--accent-tint); color: var(--button); }
 .banner .button-glass {
   gap: 8px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(9, 19, 21, 0.55);
   border-color: rgba(255, 255, 255, 0.28);
   color: #fff;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
-.banner .button-glass:hover { background: rgba(255, 255, 255, 0.2); border-color: rgba(255, 255, 255, 0.42); color: #fff; }
+.banner .button-glass:hover { background: rgba(9, 19, 21, 0.72); border-color: rgba(255, 255, 255, 0.42); color: #fff; }
 
 /* ---------- Enacted budgets page ---------- */
 .legend { font-family: var(--font-body); font-size: 12.5px; gap: 8px 20px; }
@@ -549,6 +550,11 @@ code { border-radius: 4px; }
   .main { padding-top: 16px; }
   .dash { gap: 12px; }
   .banner { grid-template-columns: 1fr; padding: 26px 22px; }
+  .banner-bg {
+    background:
+      linear-gradient(180deg, rgba(9, 19, 21, 0.82) 0%, rgba(9, 19, 21, 0.62) 55%, rgba(9, 19, 21, 0.72) 100%),
+      url("../assets/taal-dusk-900.webp") 62% 50% / cover no-repeat;
+  }
   .banner-actions { flex-direction: row; flex-wrap: wrap; }
   .dcard { padding: 18px; border-radius: var(--radius); }
   .kpi-value { font-size: 26px; }
