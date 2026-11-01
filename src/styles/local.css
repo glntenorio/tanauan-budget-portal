@@ -1542,3 +1542,7 @@ a.ochip:hover { background: var(--accent-soft); color: var(--accent-deep); }
 }
 @media (prefers-reduced-motion: reduce) { .ycol2-bar { animation: none; } }
 .ycol2-peak { position: static; margin-bottom: 4px; }
+
+/* No grey/blue flash on tap (mobile browsers); press states and keyboard focus rings stay */
+html { -webkit-tap-highlight-color: transparent; }
+a, button, summary, [role="button"], label, select, input { -webkit-tap-highlight-color: transparent; }
