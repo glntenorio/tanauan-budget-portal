@@ -33,13 +33,19 @@ export function Masthead() {
             <img src={config.logo} alt="" className="masthead-logo" />
           ) : (
             <svg className="masthead-mark" viewBox="0 0 32 32" aria-hidden="true">
-              <rect width="32" height="32" rx="8" />
-              <path d="M8 22V10h3v12zm6.5 0V14h3v8zM21 22v-5h3v5z" />
+              <defs>
+                <linearGradient id="mark-g" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                  <stop offset="0" stopColor="#6a8d5f" />
+                  <stop offset="1" stopColor="#44603c" />
+                </linearGradient>
+              </defs>
+              <rect width="32" height="32" rx="8" fill="url(#mark-g)" />
+              <rect x="11" y="11" width="10" height="10" rx="2.5" fill="none" stroke="#fff" strokeWidth="2.6" transform="rotate(45 16 16)" />
             </svg>
           )}
           <span>
             <span className="masthead-name">{config.name}</span>
-            <span className="masthead-kicker">Budget portal · 2020–2027</span>
+            <span className="masthead-kicker">Budget portal <span aria-hidden="true">·</span> by glen<b>tenorio</b></span>
           </span>
         </Link>
         <nav className="mainnav" aria-label="Sections">
@@ -74,6 +80,16 @@ export function Footer() {
   return (
     <footer className="footer">
       <div className="page footer-inner">
+        <div className="footer-brand">
+          <a className="footer-by" href="https://glentenorio.com" target="_blank" rel="noopener">
+            <span className="footer-by-mark" aria-hidden="true" />
+            <span>glen<b>tenorio</b></span>
+          </a>
+          <p>
+            A citizen project for {shortNameOf(config)}: where the 2027 national budget is set to go, in plain language,
+            with the source behind every figure. Independent, unpaid, and not affiliated with any government office.
+          </p>
+        </div>
         <p className="footer-source">
           Source: NEP FY 2027 and House Bill 10858 · via the BetterGov.ph Budget API
           {meta && <> · data built {date(meta.built_at)}</>}

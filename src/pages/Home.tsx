@@ -4,7 +4,6 @@ import type { BridgeGroup, DatasetInfo, Disclaimer, GroupInfo } from '../api/typ
 import { BRIDGE_GROUPS } from '../api/types';
 import { shortNameOf, type DatasetKey } from '../config';
 import { Await, Disclaimers, ReasonTags, StatusChip } from '../components/Bits';
-import { PageHead } from '../components/Chrome';
 import OfficesSection from '../components/OfficesSection';
 import { projectsCsv, downloadText } from '../lib/csv';
 import { count, php, phpDelta, plural } from '../lib/format';
@@ -119,20 +118,39 @@ function Projects({ scope, datasets }: { scope: ScopeResult; datasets: DatasetIn
 
   return (
     <>
-      <div className="hero">
-        <PageHead
-          eyebrow={<>FY 2027<span className="sep">·</span>NEP and House Bill 10858</>}
-          title={`${plural(summary.rows, 'project')} for ${name} in the 2027 budget`}
-        >
-          <Lede summary={summary} />
-        </PageHead>
-        <Compare summary={summary} programName={programName} />
-      </div>
+      <section className="hero-band" aria-labelledby="hero-h">
+        <div className="hero-bg" aria-hidden="true" />
+        <div className="hero-inner">
+          <div className="hero-copy">
+            <p className="eyebrow">FY 2027<span className="sep">·</span>NEP and House Bill 10858</p>
+            <h1 id="hero-h">
+              {plural(summary.rows, 'project')} for {name}
+              <span className="hero-h-sub"> in the 2027 national budget</span>
+            </h1>
+            <div className="lede"><Lede summary={summary} /></div>
+            <div className="hero-actions">
+              <a className="button button-primary" href="#projects">See every project</a>
+              {summary.groups.house_only.rows > 0 && (
+                <Link className="button button-glass" to={{ search: '?status=house_only', hash: '#projects' }}>
+                  <span className="status-dot g-house_only" aria-hidden="true" />
+                  {plural(summary.groups.house_only.rows, 'House-only project')}
+                </Link>
+              )}
+            </div>
+          </div>
+          <Compare summary={summary} programName={programName} />
+        </div>
+      </section>
 
       <OfficesSection />
 
       <section className="section" aria-labelledby="groups-h">
         <h2 id="groups-h" className="section-h">What the House bill did to them</h2>
+        <div className="dist" aria-hidden="true">
+          {BRIDGE_GROUPS.filter((g) => summary.groups[g].rows).map((g) => (
+            <span key={g} className={`dist-seg g-${g}`} style={{ flexGrow: summary.groups[g].rows }} />
+          ))}
+        </div>
         <div className="groups" role="group" aria-label="Filter by status">
           {BRIDGE_GROUPS.map((g) => {
             const cell = summary.groups[g];
@@ -285,54 +303,56 @@ function Lede({ summary }: { summary: Summary }) {
   );
 }
 
-/** The two versions side by side, as bars on one scale: compared, never added. */
+/** The two versions on one scale: compared, never added. Each bar splits off the lines found in only that version. */
 function Compare({ summary, programName }: { summary: Summary; programName: (k: DatasetKey) => string }) {
   const max = Math.max(summary.nep.php, summary.house.php, 1);
   const programs = (Object.entries(summary.byDataset) as [DatasetKey, { rows: number }][])
     .sort((a, b) => b[1].rows - a[1].rows)
     .map(([k, c]) => `${programName(k)} ${count(c.rows)}`)
     .join(' · ');
-  const added = summary.groups.house_only;
-  const rows = [
-    { key: 'nep', label: 'NEP', sub: 'The budget the President submits', php: summary.nep.php, n: summary.nep.rows },
-    { key: 'house', label: 'House bill', sub: 'As the House passed it', php: summary.house.php, n: summary.house.rows },
-  ];
+  const nepOnly = summary.groups.nep_only.nep_php;
+  const houseOnly = summary.groups.house_only.house_php;
+  const pct = (v: number) => `${(Math.max(v, 0) / max) * 100}%`;
   return (
     <aside className="compare" aria-label="The two versions of the 2027 budget">
-      <p className="label">Two versions of one budget</p>
+      <p className="compare-kicker">Two versions of one budget</p>
       <dl className="compare-rows">
-        {rows.map((r) => (
-          <div key={r.key} className={`compare-row k-${r.key}`}>
-            <dt>
-              <span className="compare-name">{r.label}</span>
-              <span className="compare-sub">{r.sub}</span>
-            </dt>
-            <dd>
-              <span className="compare-amount num">{php(r.php)}</span>
-              <span className="compare-n">{plural(r.n, 'project')}</span>
-            </dd>
-            <dd className="compare-track" aria-hidden="true">
-              <span style={{ width: `${(r.php / max) * 100}%` }} />
-            </dd>
-          </div>
-        ))}
+        <div className="compare-row k-nep">
+          <dt>
+            <span className="compare-name">NEP</span>
+            <span className="compare-sub">Proposed by the President · {plural(summary.nep.rows, 'project')}</span>
+          </dt>
+          <dd className="compare-amount num">{php(summary.nep.php)}</dd>
+          <dd className="compare-track" aria-hidden="true">
+            <span className="seg seg-both" style={{ width: pct(summary.nep.php - nepOnly) }} />
+            <span className="seg seg-nep-only" style={{ width: pct(nepOnly) }} />
+          </dd>
+        </div>
+        <div className="compare-row k-house">
+          <dt>
+            <span className="compare-name">House bill</span>
+            <span className="compare-sub">As the House passed it · {plural(summary.house.rows, 'project')}</span>
+          </dt>
+          <dd className="compare-amount num">{php(summary.house.php)}</dd>
+          <dd className="compare-track" aria-hidden="true">
+            <span className="seg seg-both" style={{ width: pct(summary.house.php - houseOnly) }} />
+            <span className="seg seg-house-only" style={{ width: pct(houseOnly) }} />
+          </dd>
+        </div>
       </dl>
-      {added.rows > 0 && (
-        <Link className="compare-note" to={{ search: '?status=house_only', hash: '#projects' }}>
-          <span className="status-dot g-house_only" aria-hidden="true" />
-          <span>
-            <strong>{plural(added.rows, 'project')}</strong> worth {php(added.house_php)} appear only in the House bill.
-            Candidates to check, not confirmed insertions.
-          </span>
-        </Link>
-      )}
-      <p className="compare-foot">{programs}</p>
+      <ul className="compare-key">
+        <li><span className="sw sw-both" />In both versions</li>
+        {houseOnly > 0 && <li><span className="sw sw-house-only" />House bill only · {php(houseOnly)}</li>}
+        {nepOnly > 0 && <li><span className="sw sw-nep-only" />NEP only · {php(nepOnly)}</li>}
+      </ul>
+      <p className="compare-foot">{programs}<span className="sep">·</span>Lines in one version only are candidates to check, not findings.</p>
     </aside>
   );
 }
 
 function ProjectTable({ rows, programName }: { rows: ScopedProject[]; programName: (k: DatasetKey) => string }) {
   if (!rows.length) return null;
+  const max = Math.max(...rows.map((p) => Math.max(p.house_php ?? 0, p.nep_php ?? 0)), 1);
   return (
     <div className="table" role="table" aria-label="Projects">
       <div className="tr th" role="row">
@@ -343,7 +363,7 @@ function ProjectTable({ rows, programName }: { rows: ScopedProject[]; programNam
         <span role="columnheader" className="r">Change</span>
       </div>
       {rows.map((p) => (
-        <div className="tr" role="row" key={p.key}>
+        <div className={`tr row-${p.bridge_group}`} role="row" key={p.key}>
           <span role="cell" className="td-project">
             <Link to={`/projects/${p.dataset}/${encodeURIComponent(p.id)}`} className="project-title">{p.title}</Link>
             <span className="project-meta">
@@ -355,7 +375,10 @@ function ProjectTable({ rows, programName }: { rows: ScopedProject[]; programNam
           </span>
           <span role="cell" className="td-status"><StatusChip group={p.bridge_group} label={p.status_label} held={p.held} /></span>
           <span role="cell" className="r num" data-label="NEP">{php(p.nep_php)}</span>
-          <span role="cell" className="r num strong" data-label="House bill">{php(p.house_php)}</span>
+          <span role="cell" className="r num strong td-amount" data-label="House bill">
+            {php(p.house_php)}
+            <span className="amt-bar" aria-hidden="true"><span style={{ width: `${((p.house_php ?? p.nep_php ?? 0) / max) * 100}%` }} /></span>
+          </span>
           <span role="cell" className={`r num delta ${(p.delta_php ?? 0) > 0 ? 'up' : (p.delta_php ?? 0) < 0 ? 'down' : ''}`} data-label="Change">
             {phpDelta(p.delta_php)}
           </span>

@@ -10,35 +10,40 @@
 :root {
   /* Paper and ink */
   --paper: #ffffff;
-  --paper-2: #f4f7f5;
-  --paper-3: #e9eeeb;
-  --rule: #d3dbd7;
-  --rule-soft: #e6ece9;
-  --ink: #0f1a17;
-  --ink-2: #2a3632;
-  --ink-3: #56635e;
-  --ink-mute: #87938e;
+  --paper-2: #f5f5f3;
+  --paper-3: #ebebe8;
+  --rule: #e0e0dc;
+  --rule-soft: #ececea;
+  --ink: #091315;
+  --ink-2: #2b3330;
+  --ink-3: #6b716e;
+  --ink-mute: #9a9f9c;
 
   /* Accents */
-  --accent: #0b6b5d;        /* Taal lake green */
-  --accent-deep: #07564a;
-  --accent-soft: #e4f2ee;
-  --pop: #e89a1c;           /* marigold: "House bill only", the lines to check */
+  --accent: #54734e;        /* glentenorio.com sage */
+  --accent-deep: #44603c;
+  --accent-soft: #e7efe4;
+  --accent-tint: #dde9d9;
+  --grad: linear-gradient(135deg, #6a8d5f 0%, #44603c 100%);
+  --button: #091315;
+  --pop: #e8962a;           /* Taal sunset: "House bill only", the lines to check */
   --pop-soft: #fdf2df;
   --positive: #3a6b3a;
   --negative: #b8341f;
   --neutral: #8a7c5a;
 
   /* Type roles */
-  --font-hero: "Schibsted Grotesk", "Figtree", -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-hero: "Geist", "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: "DM Sans", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
   /* Layout */
   --page: 1280px;
   --gutter: 32px;
-  --radius: 12px;
+  --radius: 16px;
   --radius-sm: 8px;
+  --radius-lg: 24px;
+  --ease: cubic-bezier(.075, .82, .165, 1);
   --shadow-1: 0 1px 2px rgba(15, 26, 23, 0.05), 0 4px 16px rgba(15, 26, 23, 0.05);
 }
 
@@ -52,7 +57,7 @@ html, body {
   font-family: var(--font-body);
   font-size: 15px;
   line-height: 1.5;
-  font-feature-settings: "ss01", "cv11", "tnum";
+  font-feature-settings: normal;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }

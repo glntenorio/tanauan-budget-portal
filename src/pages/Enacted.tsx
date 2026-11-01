@@ -5,7 +5,7 @@
  * - every program, activity or project in any department whose name names one
  *   of the portal's places, with its appropriation in each year.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { type CSSProperties, useEffect, useMemo, useState } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import type { DistrictCard, DistrictOffice, Envelope } from '../api/types';
 import { GAA_YEARS } from '../api/types';
@@ -318,6 +318,8 @@ function Programs({ result, placeList }: { result: GaaResult; placeList: string 
 }
 
 function ProgramRow({ r, year, many }: { r: GaaRow; year: number | null; many: boolean }) {
+  // Each cell is tinted by its share of the program's largest year: a heat row.
+  const rowMax = Math.max(1, ...GAA_YEARS.map((y) => (hasYear(r, y) ? r.years[String(y)]?.amount ?? 0 : 0)));
   return (
     <div className="tr" role="row">
       <span role="cell" className="td-project">
@@ -332,7 +334,7 @@ function ProgramRow({ r, year, many }: { r: GaaRow; year: number | null; many: b
         const has = hasYear(r, y);
         const amount = r.years[String(y)]?.amount ?? 0;
         return (
-          <span role="cell" key={y} data-label={String(y)} className={`r num gcell${has ? '' : ' none'}${year === y ? ' ycol' : ''}`} title={has ? phpFull(amount) : `No appropriation under this name in ${y}`}>
+          <span role="cell" key={y} data-label={String(y)} className={`r num gcell${has ? '' : ' none'}${year === y ? ' ycol' : ''}`} style={has ? ({ '--h': (amount / rowMax).toFixed(3) } as CSSProperties) : undefined} title={has ? phpFull(amount) : `No appropriation under this name in ${y}`}>
             {has ? php(amount) : '—'}
           </span>
         );
