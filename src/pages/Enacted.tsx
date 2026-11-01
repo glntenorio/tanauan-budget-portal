@@ -12,7 +12,7 @@ import { GAA_YEARS } from '../api/types';
 import { shortNameOf } from '../config';
 import { Await, Disclaimers } from '../components/Bits';
 import { CountUp, Icon, type IconName } from '../components/Dash';
-import { barangayOf, kindOf, rowTitle } from '../lib/titles';
+import { barangayOf, kindOf, rowTitle, splitStations } from '../lib/titles';
 import { downloadText } from '../lib/csv';
 import { count, php, phpFull, plural } from '../lib/format';
 import { departmentShort, gaaCsv, gaaYearTotals, hasYear, loadGaa, type GaaResult, type GaaRow } from '../lib/gaa';
@@ -284,21 +284,31 @@ function Programs({ result, placeList }: { result: GaaResult; placeList: string 
             <h2 id="gaa-years-h" className="dcard-title">By year: the programs that name {placeList}</h2>
           </div>
         </header>
-        <div className="ystrip" role="group" aria-label="Pick a year">
-          {totals.map((t) => (
-            <button
-              key={t.year}
-              type="button"
-              className={`ycell${year === t.year ? ' active' : ''}`}
-              aria-pressed={year === t.year}
-              onClick={() => setParam('year', year === t.year ? '' : String(t.year))}
-            >
-              <span className="label">{t.year}</span>
-              <span className="ybar"><span style={{ height: `${(t.amount / maxTotal) * 100}%` }} /></span>
-              <span className="yv num">{php(t.amount)}</span>
-              <span className="ysub">{plural(t.programs, 'program')} funded</span>
-            </button>
-          ))}
+        <div className={`ychart${year ? ' has-sel' : ''}`} role="group" aria-label="Pick a year">
+          {totals.map((t, i) => {
+            const prev = totals[i - 1];
+            const delta = prev && prev.amount ? Math.round(((t.amount - prev.amount) / prev.amount) * 100) : null;
+            const isPeak = t.amount === maxTotal;
+            return (
+              <button
+                key={t.year}
+                type="button"
+                className={`ycol2${year === t.year ? ' is-sel' : ''}${isPeak ? ' is-peak' : ''}`}
+                aria-pressed={year === t.year}
+                onClick={() => setParam('year', year === t.year ? '' : String(t.year))}
+                data-tip={`${t.year}: ${php(t.amount)} across ${plural(t.programs, 'program')}${delta != null ? ` · ${delta > 0 ? '+' : ''}${delta}% on ${prev!.year}` : ''}. Click to ${year === t.year ? 'clear' : 'filter the list'}.`}
+              >
+                <span className="ycol2-plot">
+                  {isPeak && <span className="ycol2-peak">Peak</span>}
+                  <span className="ycol2-v num">{php(t.amount)}</span>
+                  <span className="ycol2-bar" style={{ height: `${Math.max(3, (t.amount / maxTotal) * 78)}%` }} />
+                </span>
+                <span className="ycol2-y">{t.year}</span>
+                <span className="ycol2-n">{plural(t.programs, 'program')}</span>
+                {delta != null && <span className={`ycol2-d ${delta >= 0 ? 'up' : 'down'}`}>{delta >= 0 ? '▲' : '▼'} {Math.abs(delta)}%</span>}
+              </button>
+            );
+          })}
         </div>
         <p className="fine">Each year’s total covers only that year’s programs that name {placeList}. Years are shown side by side, not added up.</p>
       </section>
@@ -344,7 +354,8 @@ function Programs({ result, placeList }: { result: GaaResult; placeList: string 
           <div className="ptable ptable-gaa" role="table" aria-label="Programs and projects, by year">
             <div className="prow prow-head prow-gaa" role="row">
               <span role="columnheader" className="pc-project">Program or project</span>
-              {GAA_YEARS.map((y) => <span role="columnheader" key={y} className={`r${year === y ? ' ycol' : ''}`}>{y}</span>)}
+              <span role="columnheader">{FIRST}–{LAST}</span>
+              <span role="columnheader" className="r">{year ? `In ${year}` : 'Amount'}</span>
             </div>
             {filtered.slice(0, shown).map((r) => <ProgramRow key={r.key} r={r} year={year} many={(config.scope.places?.length ?? 0) > 1} />)}
           </div>
@@ -366,44 +377,49 @@ function Programs({ result, placeList }: { result: GaaResult; placeList: string 
 }
 
 function ProgramRow({ r, year, many }: { r: GaaRow; year: number | null; many: boolean }) {
-  // Each cell is tinted by its share of the program's largest year: a heat row.
   const amounts = GAA_YEARS.map((y) => (hasYear(r, y) ? r.years[String(y)]?.amount ?? 0 : 0));
   const rowMax = Math.max(1, ...amounts);
-  const funded = amounts.filter((a) => a > 0).length;
+  const fundedYears = GAA_YEARS.filter((_, i) => amounts[i] > 0);
+  const funded = fundedYears.length;
   const kind = kindOf({ dataset: 'gaa', title: r.name });
   const brgy = barangayOf(r.name);
+  const { name, stations } = splitStations(rowTitle(r.name, brgy));
+  // One figure per row: the picked year's, else the single year's, else the latest year's.
+  const shownYear = year ?? fundedYears[fundedYears.length - 1] ?? null;
+  const shown = shownYear ? amounts[GAA_YEARS.indexOf(shownYear as (typeof GAA_YEARS)[number])] : 0;
+  const span = funded === 0 ? 'No appropriation' : funded === 1 ? `in ${fundedYears[0]}` : `${fundedYears[0]}–${fundedYears[funded - 1]} · ${funded} years`;
   return (
     <div className="prow prow-gaa" role="row">
       <span role="cell" className="pc-project">
         <span className={`ptype t-${kind.icon}`} data-tip={kind.label}><Icon name={kind.icon} /></span>
         <span className="pc-text">
-          <span className="ptitle" data-tip={r.name}>{rowTitle(r.name, brgy)}</span>
+          <span className="ptitle" data-tip={r.name}>{name}</span>
+          {stations && <span className="pstations" data-tip={stations}>{stations}</span>}
           <span className="pmeta">
             {brgy && <span className="ploc">{brgy}</span>}
             <a className="pprog" href={`https://budget.bettergov.ph/d/${r.department_id}`} target="_blank" rel="noopener" data-tip={r.department}>
               {departmentShort(r.department)} ↗
             </a>
-            <span>{plural(funded, 'year')} funded</span>
             {many && r.reasons.map((p) => <span key={p} className="tag tag-place">names {p}</span>)}
           </span>
         </span>
       </span>
-      {GAA_YEARS.map((y, i) => {
-        const has = hasYear(r, y);
-        const amount = amounts[i];
-        return (
+      <span role="cell" className="pc-years" aria-label={GAA_YEARS.map((y, i) => `${y}: ${amounts[i] ? phpFull(amounts[i]) : 'none'}`).join('; ')}>
+        {GAA_YEARS.map((y, i) => (
           <span
-            role="cell"
             key={y}
-            data-label={String(y)}
-            className={`r num gchip${has ? '' : ' none'}${year === y ? ' ycol' : ''}${has && funded > 1 && amount === rowMax ? ' is-peak' : ''}`}
-            style={has ? ({ '--h': (amount / rowMax).toFixed(3) } as CSSProperties) : undefined}
-            data-tip={has ? `${y}: ${phpFull(amount)}${amount === rowMax && funded > 1 ? ' · its peak year' : ''}` : `No appropriation under this name in ${y}`}
+            className={`ybar-mini${amounts[i] ? ' has' : ''}${year === y ? ' is-sel' : ''}`}
+            data-tip={amounts[i] ? `${y}: ${phpFull(amounts[i])}` : `${y}: no appropriation under this name`}
           >
-            {has ? php(amount) : '—'}
+            <i style={{ height: amounts[i] ? `${Math.max(14, (amounts[i] / rowMax) * 100)}%` : undefined }} />
+            <span className="ybar-y">{String(y).slice(2)}</span>
           </span>
-        );
-      })}
+        ))}
+      </span>
+      <span role="cell" className="pc-amount r">
+        <span className="pamt num">{shown ? php(shown) : '—'}</span>
+        <span className="pamt-sub">{year ? (shown ? `in ${year}` : `none in ${year}`) : span}</span>
+      </span>
     </div>
   );
 }

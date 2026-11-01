@@ -39,3 +39,16 @@ export function rowTitle(title: string, brgy: string | null): string {
   }
   return t.replace(/[,\s]+$/, '');
 }
+
+/**
+ * "Tanauan - Talisay - Tagaytay Rd - K0069 + 477 - K0069 + 584" →
+ * { name: "Tanauan–Talisay–Tagaytay Road", stations: "K0069+477 – K0069+584" }.
+ * Titles without kilometre stations come back as they are.
+ */
+export function splitStations(title: string): { name: string; stations: string | null } {
+  const m = /^(.*?)\s*-\s*(K\d{4}\s*\+.*)$/.exec(title);
+  if (!m) return { name: title, stations: null };
+  const name = m[1].replace(/\s+-\s+/g, '–').replace(/\bRd\.?$/, 'Road');
+  const stations = m[2].replace(/\s*\+\s*/g, '+').replace(/\s+-\s+/g, ' – ').replace(/,\s*$/, '');
+  return { name, stations };
+}
