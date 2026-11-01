@@ -5,13 +5,14 @@
  * - every program, activity or project in any department whose name names one
  *   of the portal's places, with its appropriation in each year.
  */
-import { type CSSProperties, useEffect, useMemo, useState } from 'react';
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { type CSSProperties, type ReactNode, useEffect, useMemo, useState } from 'react';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import type { DistrictCard, DistrictOffice, Envelope } from '../api/types';
 import { GAA_YEARS } from '../api/types';
 import { shortNameOf } from '../config';
-import { Await, Disclaimers, External } from '../components/Bits';
-import { PageHead } from '../components/Chrome';
+import { Await, Disclaimers } from '../components/Bits';
+import { CountUp, Icon, type IconName } from '../components/Dash';
+import { barangayOf, kindOf, rowTitle } from '../lib/titles';
 import { downloadText } from '../lib/csv';
 import { count, php, phpFull, plural } from '../lib/format';
 import { departmentShort, gaaCsv, gaaYearTotals, hasYear, loadGaa, type GaaResult, type GaaRow } from '../lib/gaa';
@@ -55,19 +56,31 @@ export default function Enacted() {
   const placeList = places.map((p) => p.label).join(', ');
   return (
     <main className="page main">
-      <PageHead
-        eyebrow={<>GAA<span className="sep">·</span>FY {FIRST}–{LAST}<span className="sep">·</span>{name}</>}
-        title={
-          state.status === 'ready'
-            ? `${plural(state.value.rows.length, 'program and project', 'programs and projects')} in the ${FIRST}–${LAST} budgets name ${placeList}`
-            : `${name} in the enacted budgets, ${FIRST}–${LAST}`
-        }
-      >
-        <p>
-          The General Appropriations Act (GAA) is the budget Congress passes and the President signs each year: the authority to
-          spend, not the money spent. These are the budgets for {FIRST} to {LAST}; the 2027 budget is still a bill.
-        </p>
-      </PageHead>
+      <header className="dcard banner banner-gaa" style={{ '--i': 0 } as CSSProperties}>
+        <div className="banner-bg" aria-hidden="true" />
+        <div className="banner-copy">
+          <p className="banner-kicker">
+            <span className="live-dot" aria-hidden="true" /> GAA<span className="sep">·</span>FY {FIRST}–{LAST}<span className="sep">·</span>Enacted budgets
+          </p>
+          <h1>
+            {state.status === 'ready' ? `${plural(state.value.rows.length, 'program', 'programs')} for ${name}` : `${name} in the enacted budgets`}
+            <span className="banner-h-sub"> in the {FIRST}–{LAST} national budgets</span>
+          </h1>
+          <div className="banner-lede">
+            <p>
+              The General Appropriations Act (GAA) is the budget Congress passes and the President signs each year: the authority to
+              spend, not the money spent. These are the budgets for {FIRST} to {LAST}; the 2027 budget is still a bill.
+            </p>
+          </div>
+        </div>
+        <div className="banner-actions">
+          <a className="button button-light" href="#programs">See every program</a>
+          <Link className="button button-glass" to="/">The 2027 budget →</Link>
+        </div>
+        <div className="banner-kpis gaa-tiles">
+          {state.status === 'ready' ? <GaaTiles result={state.value} /> : [0, 1, 2, 3].map((i) => <div key={i} className="dcard kpi gtile is-loading" style={{ '--i': i + 1 } as CSSProperties}><span /><span /></div>)}
+        </div>
+      </header>
 
       <OfficeHistories />
 
@@ -90,21 +103,48 @@ export default function Enacted() {
         <Programs result={state.value} placeList={placeList} />
       )}
 
-      <section className="section" aria-labelledby="gaa-notes-h">
+      <section className="section gaa-notes" aria-labelledby="gaa-notes-h">
         <h2 id="gaa-notes-h" className="section-h">Reading these figures</h2>
-        <ul className="plain-list fine-list">
-          <li>Amounts are the appropriations in each year’s GAA, in pesos. The GAA publishes them in thousands.</li>
+        <ul className="gnotes">
+          <li><span className="why-ico" aria-hidden="true"><Icon name="doc" /></span><span><b>Appropriations, in pesos</b>The amounts in each year's GAA. The GAA publishes them in thousands.</span></li>
           {places.length > 0 && (
             <>
-              <li>A program is listed when its name includes {placeList}. Names are matched, not places surveyed; a project whose name does not say where it is will not be here.</li>
-              <li>One row is one name in one agency across the years. A renamed or re-scoped project shows as a new row. A dash means no appropriation under that name that year.</li>
+              <li><span className="why-ico" aria-hidden="true"><Icon name="projects" /></span><span><b>Matched by name</b>A program is listed when its name includes {placeList}. A project whose name does not say where it is will not be here.</span></li>
+              <li><span className="why-ico" aria-hidden="true"><Icon name="history" /></span><span><b>One name, one row</b>One row is one name in one agency across the years. A renamed or re-scoped project shows as a new row; a dash means no appropriation under that name.</span></li>
             </>
           )}
-          <li>A DPWH office’s yearly figure is its whole budget, as the GAA lists it under that office. An office that serves several districts is shown whole, never split.</li>
-          <li>The 2027 figures are the NEP and the House bill, not law. They are shown beside the enacted years, never added to them.</li>
+          <li><span className="why-ico" aria-hidden="true"><Icon name="offices" /></span><span><b>Offices shown whole</b>A DPWH office's yearly figure is its whole budget as the GAA lists it. An office serving several districts is never split.</span></li>
+          <li><span className="why-ico" aria-hidden="true"><Icon name="capitol" /></span><span><b>2027 is still a bill</b>The 2027 figures are the NEP and the House bill, not law. They sit beside the enacted years, never added to them.</span></li>
         </ul>
       </section>
     </main>
+  );
+}
+
+function GaaTiles({ result }: { result: GaaResult }) {
+  const totals = gaaYearTotals(result.rows);
+  const peak = totals.reduce((a, b) => (b.amount > a.amount ? b : a), totals[0]);
+  const last = totals[totals.length - 1];
+  const depts = new Set(result.rows.map((r) => r.department_id)).size;
+  const tiles: { icon: IconName; label: string; value: ReactNode; sub: string }[] = [
+    { icon: 'projects', label: 'Programs', value: <CountUp value={result.rows.length} format={count} />, sub: `that name the city, ${FIRST}–${LAST}` },
+    { icon: 'history', label: `Peak · ${peak?.year ?? ''}`, value: peak ? <CountUp value={peak.amount} format={php} /> : '—', sub: peak ? `${plural(peak.programs, 'program')} funded that year` : '' },
+    { icon: 'doc', label: `Latest · ${last?.year ?? ''}`, value: last ? <CountUp value={last.amount} format={php} /> : '—', sub: last ? `${plural(last.programs, 'program')} funded` : '' },
+    { icon: 'capitol', label: 'Departments', value: <CountUp value={depts} format={count} />, sub: 'with a program that names it' },
+  ];
+  return (
+    <>
+      {tiles.map((t, i) => (
+        <div key={t.label} className={`dcard kpi gtile${i === 1 ? ' kpi-pop' : ''}`} style={{ '--i': i + 1 } as CSSProperties}>
+          <div className="kpi-head">
+            <span className="kpi-icon" aria-hidden="true"><Icon name={t.icon} /></span>
+            <p className="kpi-label">{t.label}</p>
+          </div>
+          <p className="kpi-value num">{t.value}</p>
+          <p className="kpi-sub">{t.sub}</p>
+        </div>
+      ))}
+    </>
   );
 }
 
@@ -237,8 +277,13 @@ function Programs({ result, placeList }: { result: GaaResult; placeList: string 
 
   return (
     <>
-      <section className="section" aria-labelledby="gaa-years-h">
-        <h2 id="gaa-years-h" className="section-h">By year: the programs that name {placeList}</h2>
+      <section className="dcard gaa-years" aria-labelledby="gaa-years-h" style={{ '--i': 2 } as CSSProperties}>
+        <header className="dcard-head">
+          <div>
+            <p className="dcard-kicker">Click a year to filter the list</p>
+            <h2 id="gaa-years-h" className="dcard-title">By year: the programs that name {placeList}</h2>
+          </div>
+        </header>
         <div className="ystrip" role="group" aria-label="Pick a year">
           {totals.map((t) => (
             <button
@@ -258,7 +303,7 @@ function Programs({ result, placeList }: { result: GaaResult; placeList: string 
         <p className="fine">Each year’s total covers only that year’s programs that name {placeList}. Years are shown side by side, not added up.</p>
       </section>
 
-      <section className="section" id="programs" aria-labelledby="gaa-list-h">
+      <section className="section dcard dcard-table" id="programs" aria-labelledby="gaa-list-h" style={{ '--i': 3 } as CSSProperties}>
         <div className="list-head">
           <h2 id="gaa-list-h" className="section-h">
             {narrowed ? `${count(filtered.length)} of ${plural(all.length, 'program')}` : `Every program and project (${count(all.length)})`}
@@ -296,9 +341,9 @@ function Programs({ result, placeList }: { result: GaaResult; placeList: string 
         )}
 
         {filtered.length > 0 && (
-          <div className="table gtable" role="table" aria-label="Programs and projects, by year">
-            <div className="tr th" role="row">
-              <span role="columnheader">Program or project</span>
+          <div className="ptable ptable-gaa" role="table" aria-label="Programs and projects, by year">
+            <div className="prow prow-head prow-gaa" role="row">
+              <span role="columnheader" className="pc-project">Program or project</span>
               {GAA_YEARS.map((y) => <span role="columnheader" key={y} className={`r${year === y ? ' ycol' : ''}`}>{y}</span>)}
             </div>
             {filtered.slice(0, shown).map((r) => <ProgramRow key={r.key} r={r} year={year} many={(config.scope.places?.length ?? 0) > 1} />)}
@@ -322,22 +367,39 @@ function Programs({ result, placeList }: { result: GaaResult; placeList: string 
 
 function ProgramRow({ r, year, many }: { r: GaaRow; year: number | null; many: boolean }) {
   // Each cell is tinted by its share of the program's largest year: a heat row.
-  const rowMax = Math.max(1, ...GAA_YEARS.map((y) => (hasYear(r, y) ? r.years[String(y)]?.amount ?? 0 : 0)));
+  const amounts = GAA_YEARS.map((y) => (hasYear(r, y) ? r.years[String(y)]?.amount ?? 0 : 0));
+  const rowMax = Math.max(1, ...amounts);
+  const funded = amounts.filter((a) => a > 0).length;
+  const kind = kindOf({ dataset: 'gaa', title: r.name });
+  const brgy = barangayOf(r.name);
   return (
-    <div className="tr" role="row">
-      <span role="cell" className="td-project">
-        <span className="gname">{r.name}</span>
-        <span className="project-meta">
-          <span className="label">{departmentShort(r.department)}</span>
-          <External href={`https://budget.bettergov.ph/d/${r.department_id}`}>department</External>
-          {many && r.reasons.map((p) => <span key={p} className="tag tag-place">names {p}</span>)}
+    <div className="prow prow-gaa" role="row">
+      <span role="cell" className="pc-project">
+        <span className={`ptype t-${kind.icon}`} data-tip={kind.label}><Icon name={kind.icon} /></span>
+        <span className="pc-text">
+          <span className="ptitle" data-tip={r.name}>{rowTitle(r.name, brgy)}</span>
+          <span className="pmeta">
+            {brgy && <span className="ploc">{brgy}</span>}
+            <a className="pprog" href={`https://budget.bettergov.ph/d/${r.department_id}`} target="_blank" rel="noopener" data-tip={r.department}>
+              {departmentShort(r.department)} ↗
+            </a>
+            <span>{plural(funded, 'year')} funded</span>
+            {many && r.reasons.map((p) => <span key={p} className="tag tag-place">names {p}</span>)}
+          </span>
         </span>
       </span>
-      {GAA_YEARS.map((y) => {
+      {GAA_YEARS.map((y, i) => {
         const has = hasYear(r, y);
-        const amount = r.years[String(y)]?.amount ?? 0;
+        const amount = amounts[i];
         return (
-          <span role="cell" key={y} data-label={String(y)} className={`r num gcell${has ? '' : ' none'}${year === y ? ' ycol' : ''}`} style={has ? ({ '--h': (amount / rowMax).toFixed(3) } as CSSProperties) : undefined} title={has ? phpFull(amount) : `No appropriation under this name in ${y}`}>
+          <span
+            role="cell"
+            key={y}
+            data-label={String(y)}
+            className={`r num gchip${has ? '' : ' none'}${year === y ? ' ycol' : ''}${has && funded > 1 && amount === rowMax ? ' is-peak' : ''}`}
+            style={has ? ({ '--h': (amount / rowMax).toFixed(3) } as CSSProperties) : undefined}
+            data-tip={has ? `${y}: ${phpFull(amount)}${amount === rowMax && funded > 1 ? ' · its peak year' : ''}` : `No appropriation under this name in ${y}`}
+          >
             {has ? php(amount) : '—'}
           </span>
         );

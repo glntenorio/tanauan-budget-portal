@@ -1376,3 +1376,70 @@ a.ochip:hover { background: var(--accent-soft); color: var(--accent-deep); }
 .gt-layout .nav:not(.has-pill) a.active .chip { background: rgba(255, 255, 255, 0.2); border-color: transparent; color: #fff; }
 .ptabs:not(.has-pill) a:not(.active):active,
 .gt-layout .nav:not(.has-pill) a:not(.active):active { background: var(--accent-soft); }
+
+/* =============================================================
+   Budgets 2020–2026 page
+   ============================================================= */
+.banner-gaa { min-height: 500px; margin-bottom: 28px; }
+.banner-gaa .banner-actions { flex-direction: row; }
+.gtile { gap: 10px; }
+.gtile.is-loading { min-height: 132px; justify-content: center; }
+.gtile.is-loading span { display: block; height: 14px; border-radius: 8px; background: rgba(255, 255, 255, 0.12); animation: shimmer 1.4s linear infinite; background-size: 200% 100%; background-image: linear-gradient(90deg, rgba(255,255,255,.08), rgba(255,255,255,.18), rgba(255,255,255,.08)); }
+.gtile.is-loading span:first-child { width: 50%; }
+.gtile.is-loading span:last-child { height: 30px; width: 70%; }
+.banner .gtile .kpi-sub { margin-top: auto; }
+
+.main > .section:has(.hgrid) { margin-top: 0; }
+.gaa-years { margin: 28px 0 0; padding: 26px 28px; }
+.gaa-years .ystrip { border-radius: var(--radius); }
+.gaa-years .fine { margin-top: 14px; }
+#programs.dcard-table { margin-top: 28px; }
+
+/* Program table: same layout as the project list, years as heat chips */
+.prow-gaa { grid-template-columns: minmax(0, 1fr) repeat(7, 86px); gap: 6px; }
+.prow-head.prow-gaa { gap: 6px; }
+.prow-head.prow-gaa .pc-project { padding-left: 54px; }
+.prow-gaa .pc-project { padding-right: 12px; }
+.prow-gaa .pprog { text-decoration: none; }
+.prow-gaa .pprog:hover { color: var(--accent); }
+.gchip {
+  justify-self: stretch;
+  padding: 9px 6px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--ink);
+  background: rgba(84, 115, 78, calc(0.06 + var(--h, 0) * 0.3));
+  transition: transform .2s var(--ease);
+}
+.gchip.none { background: transparent; color: #cfd2cc; font-weight: 400; }
+.gchip.is-peak { box-shadow: inset 0 0 0 1.5px var(--accent); color: var(--accent-deep); }
+.gchip.ycol:not(.none) { background: rgba(232, 150, 42, calc(0.12 + var(--h, 0) * 0.3)); box-shadow: inset 0 0 0 1.5px var(--pop); color: #8a4c04; }
+.prow-head .ycol { color: #a85f06; }
+.prow-gaa .r { justify-self: stretch; text-align: center; }
+
+/* Notes as cards */
+.gaa-notes { margin-top: 48px; }
+.gnotes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); gap: 14px; }
+.gnotes li { display: flex; gap: 12px; padding: 18px; border-radius: var(--radius); background: #fff; border: 1px solid var(--rule); }
+.gnotes b { display: block; margin-bottom: 4px; font-size: 14.5px; color: var(--ink); }
+.gnotes li > span:last-child { font-size: 13px; line-height: 1.55; color: var(--ink-3); }
+
+@media (max-width: 1240px) {
+  .prow-gaa { grid-template-columns: minmax(0, 1fr) repeat(7, 74px); }
+}
+@media (max-width: 860px) {
+  .banner-gaa { min-height: 0; }
+  .gaa-years { padding: 20px 16px; }
+  .prow-gaa { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .prow-gaa .pc-project { grid-column: 1 / -1; grid-row: auto; padding-right: 0; }
+  .prow-gaa .gchip::before { content: attr(data-label); display: block; font-family: var(--font-mono); font-size: 9.5px; font-weight: 500; letter-spacing: .06em; color: var(--ink-mute); margin-bottom: 2px; }
+}
+@media (max-width: 560px) {
+  .banner-kpis.gaa-tiles { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .gaa-tiles .gtile { padding: 14px; }
+  .gaa-tiles .kpi-value { font-size: 22px; }
+  .gaa-tiles .kpi-icon { width: 28px; height: 28px; }
+  .gaa-tiles .kpi-sub { font-size: 11.5px; }
+}
