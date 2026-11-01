@@ -10,7 +10,7 @@
  * Nothing is computed that the API does not publish: amounts, statuses and
  * labels are the API's, row for row.
  */
-import { DATASET_KEYS, type DatasetKey, type Exclusion, type PortalConfig } from '../config';
+import { DATASET_KEYS, placeFilter, type DatasetKey, type Exclusion, type PlaceQuery, type PortalConfig } from '../config';
 import type { Client, Params } from '../api/client';
 import type { BridgeGroup, Disclaimer, Meta, OfficeLens, ProjectRow } from '../api/types';
 import { BRIDGE_GROUPS } from '../api/types';
@@ -34,7 +34,10 @@ export interface QueryReport {
   region?: string;
   /** Rows the API returned. */
   total: number;
-  /** Rows kept (after the region rule). */
+  /** Place queries: titles must also match this pattern. */
+  match?: string;
+  matchNote?: string;
+  /** Rows kept (after the region rule and the pattern). */
   kept: number;
   truncated: boolean;
   /** The API request, for anyone who wants to check the list. */
@@ -57,7 +60,7 @@ export async function resolveScope(client: Client, config: PortalConfig): Promis
   const { offices = [], places = [] } = config.scope;
   const exclude = (config.scope.exclude ?? []).filter((e) => !e.key.startsWith('gaa:'));
 
-  type Job = { kind: Reason['kind']; label: string; dataset: DatasetKey; params: Params; region?: string };
+  type Job = { kind: Reason['kind']; label: string; dataset: DatasetKey; params: Params; region?: string; place?: PlaceQuery };
   const jobs: Job[] = [
     ...offices.map((office): Job => ({ kind: 'office', label: office, dataset: 'dpwh', params: { office } })),
     // The region is applied here, not by the API: some lists (irrigation) give
@@ -70,6 +73,7 @@ export async function resolveScope(client: Client, config: PortalConfig): Promis
         dataset,
         params: { q: p.q ?? p.label },
         region: p.region,
+        place: p,
       })),
     ),
   ];
@@ -83,7 +87,8 @@ export async function resolveScope(client: Client, config: PortalConfig): Promis
 
   for (const [i, job] of jobs.entries()) {
     const { list, rows: fetched, truncated } = results[i];
-    const rows = job.region ? fetched.filter((r) => r.region_key == null || r.region_key === job.region) : fetched;
+    const keep = job.place ? placeFilter(job.place) : () => true;
+    const rows = fetched.filter((r) => (!job.region || r.region_key == null || r.region_key === job.region) && keep(r.title));
     meta ??= list.meta;
     for (const d of list.disclaimers) if (!disclaimers.has(d.id)) disclaimers.set(d.id, d);
     queries.push({
@@ -92,6 +97,8 @@ export async function resolveScope(client: Client, config: PortalConfig): Promis
       dataset: job.dataset,
       params: job.params,
       region: job.region,
+      match: job.place?.match,
+      matchNote: job.place?.matchNote,
       total: list.data.total,
       kept: rows.length,
       truncated,

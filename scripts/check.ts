@@ -36,7 +36,8 @@ async function main() {
   console.log('Queries');
   for (const q of scope.queries) {
     const what = q.kind === 'office' ? `office "${q.label}"` : `title names "${q.label}" (q=${q.params.q})`;
-    const kept = q.region ? ` · ${count(q.kept)} kept in region ${q.region} or giving no region` : '';
+    const rules = [q.region && `in region ${q.region} or giving no region`, q.match && `matching /${q.match}/i`].filter(Boolean).join(', ');
+    const kept = rules ? ` · ${count(q.kept)} kept ${rules}` : '';
     console.log(`  ${q.dataset.padEnd(5)} ${what}: ${count(q.total)}${kept}`);
     if (q.kind === 'office') {
       if (q.total === 0) problems.push(`office "${q.label}" matches no DPWH line. Use the name as published: npm run setup -- --list-offices`);
@@ -88,13 +89,14 @@ async function main() {
     const gaa = await resolveGaa(api, config);
     console.log(`\nEnacted budgets 2020–2026: ${plural(gaa.rows.length, "program or project", "programs and projects")} name the places (${count(gaa.searched)} departments searched)`);
     for (const q of gaa.queries) {
-      console.log(`  "${q.q}" in ${departmentShort(q.department)}: ${count(q.matched)}${q.truncated ? ` (cut at ${count(q.fetched)})` : ''}`);
+      console.log(`  "${q.q}" in ${departmentShort(q.department)}: ${count(q.matched)}${q.truncated ? ` (cut at ${count(q.fetched)})` : ''}${q.match ? ` · ${count(q.kept)} kept matching /${q.match}/i` : ''}`);
       if (q.truncated) problems.push(`"${q.q}" matches ${count(q.matched)} ${departmentShort(q.department)} programs, more than the portal loads. Make q narrower.`);
     }
     for (const t of gaaYearTotals(gaa.rows)) console.log(`  ${t.year}: ${php(t.amount)} on ${count(t.programs)} programs`);
 
     // Reconcile: for every search and year, the rows loaded add up to the API's own total for that search.
-    const withExcluded = [...gaa.rows, ...gaa.excluded.flatMap((x) => (x.row ? [x.row] : []))];
+    // Rows left out by a place's pattern count here too: the API's total is for the whole search.
+    const withExcluded = [...gaa.rows, ...gaa.filtered, ...gaa.excluded.flatMap((x) => (x.row ? [x.row] : []))];
     let checked = 0;
     for (const q of gaa.queries) {
       if (q.truncated) continue;

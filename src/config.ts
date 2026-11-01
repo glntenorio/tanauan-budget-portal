@@ -34,6 +34,21 @@ export interface PlaceQuery {
   region?: string;
   /** Programs to search. Defaults to all four. */
   datasets?: DatasetKey[];
+  /**
+   * For a name other places share: keep only titles that also match this
+   * case-insensitive regular expression. Applies to the 2027 lines and the
+   * 2020–2026 budgets (which carry no region). The About page publishes it.
+   */
+  match?: string;
+  /** Why `match` is there, in a sentence readers see. */
+  matchNote?: string;
+}
+
+/** The title test for a place: every title passes when it has no `match`. */
+export function placeFilter(p: PlaceQuery): (title: string) => boolean {
+  if (!p.match) return () => true;
+  const re = new RegExp(p.match, 'i');
+  return (title) => re.test(title);
 }
 
 /** A line the maintainer removed from the portal. Every exclusion is published on the About page. */
@@ -111,6 +126,9 @@ export function configProblems(config: PortalConfig): string[] {
   }
   for (const p of places) {
     if (!p.label.trim()) problems.push('a place has an empty label.');
+    if (p.match) {
+      try { new RegExp(p.match, 'i'); } catch { problems.push(`place "${p.label}": match is not a valid regular expression.`); }
+    }
     for (const d of p.datasets ?? []) {
       if (!DATASET_KEYS.includes(d)) problems.push(`place "${p.label}": unknown program "${d}".`);
     }

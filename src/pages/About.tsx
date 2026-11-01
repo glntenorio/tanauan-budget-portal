@@ -73,6 +73,7 @@ function AboutView({ scope, overview }: { scope: ScopeResult; overview: Overview
               <span role="cell">
                 {q.kind === 'office' ? <>are listed under <strong>{q.label}</strong></> : <>have a title naming <strong>{String(q.params.q)}</strong></>}
                 {q.region && <span className="muted small"> · kept to region {q.region}, or giving no region</span>}
+                {q.match && <span className="muted small"> · {q.matchNote ?? <>kept only where the title also matches <code>{q.match}</code></>}</span>}
               </span>
               <span role="cell">{label(q.dataset)}</span>
               <span role="cell" className="r num">{count(q.total)}</span>
@@ -195,15 +196,18 @@ function GaaQuestions() {
               <span role="columnheader">Programs whose name has…</span>
               <span role="columnheader">Department</span>
               <span role="columnheader" className="r">Found</span>
-              <span role="columnheader" className="r">Loaded</span>
+              <span role="columnheader" className="r">Kept</span>
               <span role="columnheader" className="r">Check it</span>
             </div>
             {state.value.queries.map((q) => (
               <div className="tr" role="row" key={q.place + q.department_id}>
-                <span role="cell"><strong>{q.q}</strong></span>
+                <span role="cell">
+                  <strong>{q.q}</strong>
+                  {q.match && <span className="muted small"> · {q.matchNote ?? <>kept only where the name also matches <code>{q.match}</code></>}</span>}
+                </span>
                 <span role="cell">{departmentShort(q.department)}</span>
                 <span role="cell" className="r num">{count(q.matched)}</span>
-                <span role="cell" className="r num">{count(q.fetched)}</span>
+                <span role="cell" className="r num">{count(q.kept)}</span>
                 <span role="cell" className="r"><External href={q.api}>API</External></span>
               </div>
             ))}

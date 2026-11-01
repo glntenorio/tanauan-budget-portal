@@ -18,7 +18,7 @@
  * - DPWH money by office per year is not here: it comes with each office from
  *   the district pages (see OfficeHistory on the page).
  */
-import type { Exclusion, PortalConfig } from '../config';
+import { placeFilter, type Exclusion, type PortalConfig } from '../config';
 import type { Client } from '../api/client';
 import type { GaaDepartment, GaaProgram } from '../api/types';
 import { GAA_YEARS } from '../api/types';
@@ -40,6 +40,10 @@ export interface GaaQuery {
   matched: number;
   /** Families fetched (less than matched only when cut at the limit). */
   fetched: number;
+  /** Families kept after the place's `match` pattern. */
+  kept: number;
+  match?: string;
+  matchNote?: string;
   truncated: boolean;
   api: string;
 }
@@ -52,6 +56,8 @@ export interface GaaResult {
   searched: number;
   departments: GaaDepartment[];
   excluded: { exclusion: Exclusion; row: GaaRow | null }[];
+  /** Families the API matched but a place's `match` pattern left out (kept for reconciling). */
+  filtered: GaaRow[];
 }
 
 export const gaaKey = (famKey: string) => `gaa:${famKey}`;
@@ -78,7 +84,7 @@ export function loadGaa(client: Client, config: PortalConfig, onProgress?: (done
 export async function resolveGaa(client: Client, config: PortalConfig, onProgress?: (done: number, total: number) => void): Promise<GaaResult> {
   const places = config.scope.places ?? [];
   const departments = (await client.gaaDepartments()).data;
-  const jobs = places.flatMap((p) => departments.map((d) => ({ place: p.label, q: p.q ?? p.label, department: d })));
+  const jobs = places.flatMap((p) => departments.map((d) => ({ place: p.label, q: p.q ?? p.label, department: d, keep: placeFilter(p), match: p.match, matchNote: p.matchNote })));
 
   let done = 0;
   onProgress?.(0, jobs.length);
@@ -96,11 +102,20 @@ export async function resolveGaa(client: Client, config: PortalConfig, onProgres
   }
 
   const byKey = new Map<string, GaaRow>();
+  const filteredByKey = new Map<string, GaaRow>();
   const queries: GaaQuery[] = [];
   jobs.forEach((j, i) => {
     const { first, rows, truncated } = results[i];
     const matched = first.meta.matched ?? rows.length;
     if (!matched) return;
+    const kept = rows.filter((r) => j.keep(r.name));
+    for (const r of rows) {
+      if (kept.includes(r)) continue;
+      const key = gaaKey(r.fam_key);
+      const seen = filteredByKey.get(key);
+      if (!seen) filteredByKey.set(key, { ...r, key, department: j.department.description, reasons: [j.place] });
+      else if (!seen.reasons.includes(j.place)) seen.reasons.push(j.place);
+    }
     queries.push({
       place: j.place,
       q: j.q,
@@ -108,10 +123,13 @@ export async function resolveGaa(client: Client, config: PortalConfig, onProgres
       department: j.department.description,
       matched,
       fetched: rows.length,
+      kept: kept.length,
+      match: j.match,
+      matchNote: j.matchNote,
       truncated,
       api: client.href(`/api/v1/gaa/departments/${j.department.id}/programs`, { q: j.q }),
     });
-    for (const r of rows) {
+    for (const r of kept) {
       const key = gaaKey(r.fam_key);
       const seen = byKey.get(key);
       if (!seen) byKey.set(key, { ...r, key, department: j.department.description, reasons: [j.place] });
@@ -132,6 +150,7 @@ export async function resolveGaa(client: Client, config: PortalConfig, onProgres
     searched: departments.length,
     departments,
     excluded: exclusions.map((exclusion) => ({ exclusion, row: byKey.get(exclusion.key) ?? null })),
+    filtered: [...filteredByKey.values()].filter((r) => !byKey.has(r.key)),
   };
 }
 
