@@ -10,31 +10,36 @@
 :root {
   /* Paper and ink */
   --paper: #ffffff;
-  --paper-2: #f4f7fc;
-  --paper-3: #eceef2;
-  --rule: #d4d8e0;
-  --rule-soft: #e7eaef;
-  --ink: #11151c;
-  --ink-2: #2b3340;
-  --ink-3: #5b6373;
-  --ink-mute: #8a92a1;
+  --paper-2: #f4f7f5;
+  --paper-3: #e9eeeb;
+  --rule: #d3dbd7;
+  --rule-soft: #e6ece9;
+  --ink: #0f1a17;
+  --ink-2: #2a3632;
+  --ink-3: #56635e;
+  --ink-mute: #87938e;
 
   /* Accents */
-  --accent: #0b4fd9;        /* BetterGov blue */
-  --accent-deep: #0a44bd;
-  --accent-soft: #e8efff;
+  --accent: #0b6b5d;        /* Taal lake green */
+  --accent-deep: #07564a;
+  --accent-soft: #e4f2ee;
+  --pop: #e89a1c;           /* marigold: "House bill only", the lines to check */
+  --pop-soft: #fdf2df;
   --positive: #3a6b3a;
   --negative: #b8341f;
   --neutral: #8a7c5a;
 
   /* Type roles */
-  --font-hero: "Figtree", "Manrope", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-hero: "Schibsted Grotesk", "Figtree", -apple-system, BlinkMacSystemFont, sans-serif;
   --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
   /* Layout */
   --page: 1280px;
   --gutter: 32px;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow-1: 0 1px 2px rgba(15, 26, 23, 0.05), 0 4px 16px rgba(15, 26, 23, 0.05);
 }
 
 * { box-sizing: border-box; }

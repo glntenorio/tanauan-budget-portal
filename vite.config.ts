@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
 import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import portal from './portal.config';
@@ -12,6 +14,14 @@ function portalHtml(api: string): Plugin {
   const url = portal.siteUrl
     ? `<link rel="canonical" href="${escape(portal.siteUrl)}" />\n    <meta property="og:url" content="${escape(portal.siteUrl)}" />`
     : '';
+  // public/og.jpg (1200×630, rendered from the hero), hash-busted so previews refresh.
+  const og = portal.siteUrl && existsSync('public/og.jpg')
+    ? (() => {
+        const v = createHash('sha1').update(readFileSync('public/og.jpg')).digest('hex').slice(0, 8);
+        const src = escape(`${portal.siteUrl.replace(/\/+$/, '')}/og.jpg?v=${v}`);
+        return `\n    <meta property="og:image" content="${src}" />\n    <meta property="og:image:width" content="1200" />\n    <meta property="og:image:height" content="630" />\n    <meta name="twitter:image" content="${src}" />`;
+      })()
+    : '';
   return {
     name: 'portal-html',
     transformIndexHtml: (html) =>
@@ -20,7 +30,8 @@ function portalHtml(api: string): Plugin {
         .replaceAll('%PORTAL_NAME%', escape(portal.name))
         .replaceAll('%PORTAL_DESCRIPTION%', escape(description))
         .replaceAll('%PORTAL_API%', escape(api))
-        .replaceAll('%PORTAL_URL_META%', url),
+        .replaceAll('%PORTAL_URL_META%', url + og)
+        .replace('<meta name="twitter:card" content="summary" />', og ? '<meta name="twitter:card" content="summary_large_image" />' : '<meta name="twitter:card" content="summary" />'),
   };
 }
 

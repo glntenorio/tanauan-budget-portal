@@ -13,7 +13,8 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "deploy:cloudflare": "npm run build && wrangler deploy",
-    "build:poster": "tsx scripts/build-poster.ts"
+    "build:poster": "tsx scripts/build-poster.ts",
+    "deploy": "sh scripts/deploy-pages.sh"
   },
   "dependencies": {
     "react": "^19.2.5",

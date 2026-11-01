@@ -1,6 +1,6 @@
-import { useMemo, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { KIND_LABELS, shortNameOf } from '../config';
+import { shortNameOf } from '../config';
 import { usePortal } from '../lib/portal-context';
 import { date } from '../lib/format';
 import { NATIONAL_URL, SOURCE_CODE_URL } from '../lib/links';
@@ -15,57 +15,34 @@ const NAV = [
 ];
 
 export function Masthead() {
-  const { config, client } = usePortal();
+  const { config } = usePortal();
   const { pathname, hash } = useLocation();
-  const today = useMemo(
-    () => new Date().toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }),
-    [],
-  );
+  // The header stays put and tightens once the page scrolls.
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
   return (
-    <>
-    {config.buildYourOwnStrip !== false && (
-      // Above the masthead, so it scrolls away; a plain link to the source.
-      <a className="build-strip" href={SOURCE_CODE_URL} target="_blank" rel="noopener">
-        <span className="build-strip-title">Create your own transparency portal</span>
-        <span className="build-strip-url">
-          {SOURCE_CODE_URL.replace(/^https:\/\//, '')} <span aria-hidden="true">→</span>
-        </span>
-      </a>
-    )}
-    <header className="masthead">
-      <div className="masthead-top">
-        <div className="page masthead-top-inner">
-          <span className="muted">{today}</span>
-          <span className="masthead-links">
-            <a href={NATIONAL_URL} target="_blank" rel="noopener">
-              National picture <span aria-hidden="true">↗</span>
-            </a>
-            <a href={`${client.base}/docs`} target="_blank" rel="noopener">
-              API <span aria-hidden="true">↗</span>
-            </a>
-            <a href={SOURCE_CODE_URL} target="_blank" rel="noopener">
-              Build your own <span aria-hidden="true">↗</span>
-            </a>
-          </span>
-        </div>
-      </div>
+    <header className={`masthead${scrolled ? ' is-scrolled' : ''}`}>
       <div className="page masthead-main">
-        <Link to="/" className="masthead-title">
-          {config.logo && <img src={config.logo} alt="" className="masthead-logo" />}
+        <Link to="/" className="masthead-title" onClick={() => pathname === '/' && window.scrollTo(0, 0)}>
+          {config.logo ? (
+            <img src={config.logo} alt="" className="masthead-logo" />
+          ) : (
+            <svg className="masthead-mark" viewBox="0 0 32 32" aria-hidden="true">
+              <rect width="32" height="32" rx="8" />
+              <path d="M8 22V10h3v12zm6.5 0V14h3v8zM21 22v-5h3v5z" />
+            </svg>
+          )}
           <span>
-            <span className="masthead-kicker">
-              {KIND_LABELS[config.kind]} <span aria-hidden="true">·</span> Budgets 2020–2027
-            </span>
             <span className="masthead-name">{config.name}</span>
+            <span className="masthead-kicker">Budget portal · 2020–2027</span>
           </span>
         </Link>
-        <a className="masthead-with" href="https://bettergov.ph" target="_blank" rel="noopener">
-          <span className="label">Data from</span>
-          <img src={BETTERGOV_LOGO} alt="BetterGov.ph" width="128" height="28" />
-        </a>
-      </div>
-      <nav className="subnav" aria-label="Sections">
-        <div className="page subnav-inner">
+        <nav className="mainnav" aria-label="Sections">
           {NAV.map((n) => {
             const active = pathname === n.to && (n.hash ? hash === n.hash : hash !== '#offices');
             return (
@@ -81,10 +58,13 @@ export function Masthead() {
               </Link>
             );
           })}
-        </div>
-      </nav>
+        </nav>
+        <a className="masthead-with" href="https://bettergov.ph" target="_blank" rel="noopener">
+          <span className="label">Data from</span>
+          <img src={BETTERGOV_LOGO} alt="BetterGov.ph" width="128" height="28" />
+        </a>
+      </div>
     </header>
-    </>
   );
 }
 
@@ -123,7 +103,7 @@ export function Footer() {
             <a href={`${client.base}/docs`} target="_blank" rel="noopener">Budget API and MCP ↗</a>
           </li>
           <li>
-            <span className="label">Open source</span>
+            <span className="label">Built on</span>
             <a href={SOURCE_CODE_URL} target="_blank" rel="noopener">Fork this portal for your LGU or DPWH office ↗</a>
           </li>
         </ul>

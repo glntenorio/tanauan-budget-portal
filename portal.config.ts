@@ -10,8 +10,11 @@ export default defineConfig({
   name: "Tanauan City",
   shortName: "Tanauan",
   operator: {
-    name: "Glen Tenorio"
+    name: "Glen Tenorio",
+    url: "https://glentenorio.com"
   },
+  siteUrl: "https://tanauan-budget-portal.pages.dev",
+  buildYourOwnStrip: false,
   scope: {
     offices: [],
     places: [

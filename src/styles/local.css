@@ -1,0 +1,286 @@
+/* =============================================================
+   Tanauan layer: our look on top of the upstream styles.
+   Kept in its own file so upstream updates to app.css merge cleanly.
+   Light only. One accent (lake green), one pop (marigold) for the
+   lines a reader should check: "House bill only".
+   ============================================================= */
+
+body { background: var(--paper); }
+h1, h2, h3 { font-weight: 700; letter-spacing: -0.025em; }
+.eyebrow { color: var(--accent); }
+
+/* ---------- Header: one sticky bar, tightens on scroll ---------- */
+.masthead {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: saturate(1.4) blur(12px);
+  -webkit-backdrop-filter: saturate(1.4) blur(12px);
+  border-bottom: 1px solid var(--rule-soft);
+  transition: box-shadow .2s ease;
+}
+.masthead.is-scrolled { box-shadow: 0 1px 0 var(--rule-soft), 0 6px 20px rgba(15, 26, 23, 0.06); }
+.masthead-main {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding-top: 16px;
+  padding-bottom: 16px;
+  transition: padding .2s ease;
+}
+.masthead.is-scrolled .masthead-main { padding-top: 9px; padding-bottom: 9px; }
+.masthead-title { gap: 12px; flex-shrink: 0; }
+.masthead-mark { width: 38px; height: 38px; display: block; flex-shrink: 0; transition: width .2s ease, height .2s ease; }
+.masthead-mark rect { fill: var(--accent); }
+.masthead-mark path { fill: #fff; }
+.masthead.is-scrolled .masthead-mark { width: 32px; height: 32px; }
+.masthead-name { font-size: 21px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.05; }
+.masthead-kicker {
+  margin: 3px 0 0;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--ink-3);
+}
+.masthead-with { margin-left: auto; gap: 2px; }
+.masthead-with .label { font-size: 9.5px; }
+.masthead-with img { height: 22px; }
+
+/* Nav: tinted pill on hover; accent text and a dot under the current page. */
+.mainnav { display: flex; gap: 2px; margin-left: 12px; overflow-x: auto; scrollbar-width: none; }
+.mainnav::-webkit-scrollbar { display: none; }
+.mainnav a {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 38px;
+  padding: 0 13px;
+  border-radius: 999px;
+  font-family: var(--font-hero);
+  font-weight: 600;
+  font-size: 14.5px;
+  color: var(--ink-2);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color .15s ease, color .15s ease;
+}
+.mainnav a:hover { background: var(--accent-soft); color: var(--accent-deep); }
+.mainnav a.active { color: var(--accent); }
+.mainnav a.active::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 3px;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* ---------- Hero: headline left, the two versions right ---------- */
+.main { padding-top: 48px; }
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(340px, 1fr);
+  gap: 56px;
+  align-items: start;
+  margin-bottom: 56px;
+}
+.hero .page-head { margin: 0; max-width: none; }
+.page-head h1 { font-size: clamp(32px, 4.4vw, 52px); font-weight: 800; letter-spacing: -0.035em; line-height: 1.04; }
+.lede { font-size: 17.5px; color: var(--ink-2); max-width: 620px; }
+
+.compare {
+  background: var(--paper-2);
+  border: 1px solid var(--rule-soft);
+  border-radius: var(--radius);
+  padding: 22px 24px 18px;
+}
+.compare > .label { margin: 0 0 14px; }
+.compare-rows { margin: 0; display: grid; gap: 18px; }
+.compare-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 16px; }
+.compare-row dt { display: flex; flex-direction: column; }
+.compare-row dd { margin: 0; }
+.compare-name { font-family: var(--font-hero); font-weight: 700; font-size: 16px; }
+.compare-sub { font-size: 12.5px; color: var(--ink-3); }
+.compare-row > dd:not(.compare-track) { display: flex; flex-direction: column; align-items: flex-end; }
+.compare-amount { font-family: var(--font-hero); font-weight: 700; font-size: 22px; letter-spacing: -0.02em; line-height: 1.15; }
+.compare-n { font-size: 12.5px; color: var(--ink-3); }
+.compare-track {
+  grid-column: 1 / -1;
+  height: 10px;
+  margin-top: 8px !important;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px var(--rule-soft);
+  overflow: hidden;
+}
+.compare-track span { display: block; height: 100%; border-radius: 999px; }
+.k-nep .compare-track span { background: var(--ink-3); }
+.k-house .compare-track span { background: var(--accent); }
+.k-house .compare-amount { color: var(--accent); }
+.compare-note {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  margin-top: 20px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--pop-soft);
+  color: var(--ink-2);
+  font-size: 13.5px;
+  line-height: 1.45;
+  text-decoration: none;
+  transition: background-color .15s ease;
+}
+.compare-note:hover { background: #fbe8c6; color: var(--ink); }
+.compare-note .status-dot { transform: translateY(1px); }
+.compare-foot { margin: 14px 0 0; font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }
+
+/* ---------- Status colours: marigold marks what to check ---------- */
+.g-house_only { background: var(--pop); }
+.g-unchanged { background: #c4cfca; }
+
+/* ---------- Sections ---------- */
+.section { margin-bottom: 56px; }
+.section-h { font-size: 24px; font-weight: 700; letter-spacing: -0.025em; margin-bottom: 16px; }
+.section-lede { font-size: 15px; }
+
+/* Office card */
+.ocard { border-radius: var(--radius); border: 1px solid var(--rule-soft); border-top: 1px solid var(--rule-soft); box-shadow: var(--shadow-1); padding: 20px 22px 18px; }
+.ocard-figs { border-top: 1px solid var(--rule); }
+.tag { border-radius: 5px; padding: 3px 6px; }
+.tag-office { border-color: #b7dbd2; color: var(--accent-deep); }
+.odistrict-photo { border-radius: 6px; }
+
+/* "What the House bill did": status filters as one row of cards */
+.groups {
+  border-top: none;
+  gap: 10px;
+}
+.group-tile {
+  border: 1px solid var(--rule-soft) !important;
+  border-radius: var(--radius-sm);
+  padding: 14px 14px 14px;
+  transition: background-color .15s ease, border-color .15s ease;
+}
+.group-tile:hover:not(:disabled) { background: var(--paper-2); border-color: var(--rule) !important; }
+.group-tile.active { background: var(--accent-soft); border-color: var(--accent) !important; box-shadow: none; }
+.group-tile:disabled { opacity: 0.45; }
+.group-count { font-size: 24px; }
+
+/* ---------- Toolbar: floating labels inside the fields ---------- */
+.toolbar { gap: 10px; margin: 8px 0 18px; }
+.field { position: relative; gap: 0; min-width: 150px; }
+.field > .label {
+  position: absolute;
+  left: 13px;
+  top: 8px;
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
+  pointer-events: none;
+  transition: top .15s ease, font-size .15s ease, letter-spacing .15s ease;
+}
+.field input, .field select {
+  height: 52px;
+  padding: 18px 13px 0;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  font-size: 14.5px;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.field select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 34px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%2356635e' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 13px center;
+}
+.field input:hover, .field select:hover { border-color: #b7c2bd; }
+.field input:focus, .field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.field input::placeholder { color: transparent; transition: color .15s ease; }
+.field input:focus::placeholder { color: var(--ink-mute); }
+/* An empty search, not in focus: the label sits where the text goes. */
+.field:has(input:placeholder-shown):not(:focus-within) > .label {
+  top: 18px;
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+}
+.field:focus-within > .label { color: var(--accent); }
+
+/* ---------- Buttons: one size, colour change only ---------- */
+.button {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--rule);
+  font-weight: 600;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+.button:hover { background: var(--accent-soft); border-color: var(--accent-soft); color: var(--accent-deep); }
+.button-primary:hover { background: var(--accent-deep); border-color: var(--accent-deep); color: #fff; }
+
+/* ---------- Project table ---------- */
+.table { border-top: 1px solid var(--ink-2); }
+.tr { padding: 14px 10px; border-radius: 0; transition: background-color .12s ease; }
+.tr.th { padding: 10px; }
+.tr:not(.th):hover { background: var(--paper-2); }
+.project-title { font-weight: 500; }
+.project-title:hover { color: var(--accent); text-decoration: none; }
+.tr > .strong { color: var(--ink); }
+
+/* ---------- Enacted budgets: bars in the accent ---------- */
+.ycell.active, .ycell:hover { background: var(--accent-soft); }
+.ycell { transition: background-color .12s ease; }
+.hcard { border-radius: var(--radius); border-top: 1px solid var(--rule); box-shadow: var(--shadow-1); }
+.bar-track, .ybar { border-radius: 4px; overflow: hidden; }
+
+/* ---------- Disclaimers and footer ---------- */
+.disclaimers { border-left-color: var(--accent); }
+.build-own { border-radius: var(--radius); border-left: none; background: var(--accent-soft); }
+.footer { border-top: 1px solid var(--rule); background: var(--paper-2); }
+.report { border-radius: var(--radius-sm); }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1100px) {
+  .masthead-with { display: none; }
+  .mainnav { margin-left: auto; }
+  .hero { grid-template-columns: 1fr; gap: 32px; }
+  .compare { max-width: 640px; }
+  .groups { gap: 8px; }
+}
+
+@media (max-width: 860px) {
+  .masthead-main { flex-wrap: wrap; gap: 8px 16px; padding-top: 12px; padding-bottom: 0; }
+  .masthead.is-scrolled .masthead-main { padding-top: 8px; padding-bottom: 0; }
+  .mainnav { order: 3; flex-basis: 100%; margin: 0 calc(var(--gutter) * -1); padding: 0 calc(var(--gutter) - 8px) 6px; }
+  .mainnav a { height: 36px; padding: 0 11px; font-size: 14px; }
+  .masthead-name { font-size: 18px; }
+  .masthead-mark { width: 32px; height: 32px; }
+  .main { padding-top: 32px; }
+  .hero { margin-bottom: 40px; }
+  .tr { padding: 14px 4px; }
+  .field { min-width: 0; flex: 1 1 calc(50% - 5px); }
+  .field-grow { flex-basis: 100%; }
+}
+
+@media (max-width: 560px) {
+  .compare { padding: 18px 16px 16px; }
+  .compare-amount { font-size: 19px; }
+  .group-tile { border-right: 1px solid var(--rule-soft) !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .masthead, .masthead-main, .masthead-mark, .mainnav a, .field > .label { transition: none; }
+}
+
+/* Inter's alternates (ss01, cv11) are set on the body; Schibsted has its own,
+   so headings and display figures use proportional defaults. */
+h1, h2, h3, .masthead-name, .compare-amount, .compare-name, .group-count, .ocard-figs dd, .yv, .amounts td.num, .group-label, .odistrict-label {
+  font-feature-settings: normal;
+}
+.compare-amount, .group-count, .ocard-figs dd, .yv { font-variant-numeric: proportional-nums; }

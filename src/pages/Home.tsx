@@ -119,14 +119,15 @@ function Projects({ scope, datasets }: { scope: ScopeResult; datasets: DatasetIn
 
   return (
     <>
-      <PageHead
-        eyebrow={<>FY 2027<span className="sep">·</span>NEP and House Bill 10858<span className="sep">·</span>{name}</>}
-        title={`${plural(summary.rows, 'project')} for ${name} in the 2027 budget`}
-      >
-        <Lede summary={summary} />
-      </PageHead>
-
-      <Stats summary={summary} programName={programName} />
+      <div className="hero">
+        <PageHead
+          eyebrow={<>FY 2027<span className="sep">·</span>NEP and House Bill 10858</>}
+          title={`${plural(summary.rows, 'project')} for ${name} in the 2027 budget`}
+        >
+          <Lede summary={summary} />
+        </PageHead>
+        <Compare summary={summary} programName={programName} />
+      </div>
 
       <OfficesSection />
 
@@ -284,34 +285,49 @@ function Lede({ summary }: { summary: Summary }) {
   );
 }
 
-function Stats({ summary, programName }: { summary: Summary; programName: (k: DatasetKey) => string }) {
+/** The two versions side by side, as bars on one scale: compared, never added. */
+function Compare({ summary, programName }: { summary: Summary; programName: (k: DatasetKey) => string }) {
+  const max = Math.max(summary.nep.php, summary.house.php, 1);
   const programs = (Object.entries(summary.byDataset) as [DatasetKey, { rows: number }][])
     .sort((a, b) => b[1].rows - a[1].rows)
     .map(([k, c]) => `${programName(k)} ${count(c.rows)}`)
     .join(' · ');
+  const added = summary.groups.house_only;
+  const rows = [
+    { key: 'nep', label: 'NEP', sub: 'The budget the President submits', php: summary.nep.php, n: summary.nep.rows },
+    { key: 'house', label: 'House bill', sub: 'As the House passed it', php: summary.house.php, n: summary.house.rows },
+  ];
   return (
-    <dl className="stats">
-      <div>
-        <dt className="label">Projects</dt>
-        <dd className="stat num">{count(summary.rows)}</dd>
-        <dd className="stat-sub">{programs || 'none'}</dd>
-      </div>
-      <div>
-        <dt className="label">NEP</dt>
-        <dd className="stat num">{php(summary.nep.php)}</dd>
-        <dd className="stat-sub">{plural(summary.nep.rows, 'project')} · the budget the President submits</dd>
-      </div>
-      <div>
-        <dt className="label">House bill</dt>
-        <dd className="stat num stat-accent">{php(summary.house.php)}</dd>
-        <dd className="stat-sub">{plural(summary.house.rows, 'project')} · compared with the NEP, not added</dd>
-      </div>
-      <div>
-        <dt className="label">In the House bill only</dt>
-        <dd className="stat num">{count(summary.groups.house_only.rows)}</dd>
-        <dd className="stat-sub">{php(summary.groups.house_only.house_php)} · insertion candidates</dd>
-      </div>
-    </dl>
+    <aside className="compare" aria-label="The two versions of the 2027 budget">
+      <p className="label">Two versions of one budget</p>
+      <dl className="compare-rows">
+        {rows.map((r) => (
+          <div key={r.key} className={`compare-row k-${r.key}`}>
+            <dt>
+              <span className="compare-name">{r.label}</span>
+              <span className="compare-sub">{r.sub}</span>
+            </dt>
+            <dd>
+              <span className="compare-amount num">{php(r.php)}</span>
+              <span className="compare-n">{plural(r.n, 'project')}</span>
+            </dd>
+            <dd className="compare-track" aria-hidden="true">
+              <span style={{ width: `${(r.php / max) * 100}%` }} />
+            </dd>
+          </div>
+        ))}
+      </dl>
+      {added.rows > 0 && (
+        <Link className="compare-note" to={{ search: '?status=house_only', hash: '#projects' }}>
+          <span className="status-dot g-house_only" aria-hidden="true" />
+          <span>
+            <strong>{plural(added.rows, 'project')}</strong> worth {php(added.house_php)} appear only in the House bill.
+            Candidates to check, not confirmed insertions.
+          </span>
+        </Link>
+      )}
+      <p className="compare-foot">{programs}</p>
+    </aside>
   );
 }
 
