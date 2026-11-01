@@ -1216,3 +1216,163 @@ a[data-tip], button [data-tip] { cursor: pointer; }
   .dcard-table { margin-top: 40px; padding: 20px 16px; }
   .ocard { padding: 20px 18px; }
 }
+
+/* =============================================================
+   Office card v2: header with icon, figure tiles with bars,
+   split bar + chips, info strip; district panel on the side
+   ============================================================= */
+.ocard2 { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 0; padding: 0; overflow: hidden; }
+.ocard2-main { display: flex; flex-direction: column; gap: 22px; padding: 28px; min-width: 0; }
+.ocard2-title { display: flex; gap: 14px; align-items: center; }
+.ocard2-icon { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 13px; background: var(--grad); color: #fff; box-shadow: 0 8px 18px -8px rgba(68, 96, 60, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.2); flex-shrink: 0; }
+.ocard2-icon svg { width: 22px; height: 22px; }
+.ocard2 .ocard-head { align-items: center; }
+.ocard2 .ocard-head h3 { font-size: 22px; font-weight: 700; letter-spacing: -0.03em; }
+.ocard2 .dcard-kicker { margin: 0 0 4px; }
+.tier-badge { display: inline-flex; flex-direction: column; align-items: flex-end; padding: 6px 12px; border-radius: 10px; background: var(--accent-soft); color: var(--accent-deep); font-weight: 700; font-size: 13px; line-height: 1.2; white-space: nowrap; }
+.tier-badge span { font-weight: 500; font-size: 11.5px; color: var(--ink-3); }
+.tier-badge.tier-B, .tier-badge.tier-mixed { background: #fdf3e2; color: #a85f06; }
+
+.ocard2-figs { margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.ocard2-figs > div { display: flex; flex-direction: column; gap: 6px; padding: 16px; border-radius: var(--radius); background: #f6f7f4; border: 1px solid transparent; transition: border-color .25s ease; }
+.ocard2-figs > div:hover { border-color: var(--rule); }
+.ocard2-figs dt { display: flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); }
+.ocard2-figs dt svg { width: 13px; height: 13px; }
+.ocard2-figs dd { margin: 0; font-family: var(--font-hero); font-weight: 700; font-size: 26px; letter-spacing: -0.035em; line-height: 1.1; }
+.ocard2-figs .is-house { background: linear-gradient(135deg, #eef3ea, #e1ebdc); }
+.ocard2-figs .is-house dd { color: var(--accent-deep); }
+.ocard2-figs .is-lines a { color: var(--accent); text-decoration: none; }
+.ocard2-figs .is-lines a:hover { color: var(--accent-deep); }
+.ofig-bar { display: block; height: 6px; margin-top: auto; border-radius: 999px; background: rgba(9, 19, 21, 0.06); overflow: hidden; }
+.ofig-bar i { display: block; height: 100%; border-radius: 999px; animation: grow-x 1.1s var(--ease) both; transform-origin: left; }
+.ofig-bar .k-nep { background: linear-gradient(90deg, #d6dbd3, #9fb096); }
+.ofig-bar .k-house { background: linear-gradient(90deg, #a9c09e, #54734e); }
+.chg-lg { padding: 6px 12px; font-size: 18px; font-family: var(--font-hero); font-weight: 700; letter-spacing: -0.02em; border-radius: 10px; }
+
+.ocard2-split-h { margin: 0 0 10px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.ocard2-split .dist { height: 12px; margin-bottom: 12px; }
+.ocard2 .ocard-groups { gap: 8px; margin: 0; }
+.ochip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; background: #f6f7f4; font-size: 13px; color: var(--ink-2); text-decoration: none; border: none !important; transition: background-color .2s ease; }
+a.ochip:hover { background: var(--accent-soft); color: var(--accent-deep); }
+.ochip b { font-weight: 700; color: var(--ink); }
+
+.ocard2-note { display: flex; gap: 10px; margin: 0; padding: 12px 14px; border-radius: 12px; background: #f6f7f4; font-size: 12.5px; line-height: 1.55; color: var(--ink-3); }
+.ocard2-note > svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; color: var(--ink-mute); }
+.ocard2-note a { color: var(--accent-deep); font-weight: 600; }
+
+.ocard2-side { padding: 28px 24px; background: linear-gradient(180deg, #f7f8f5, #f1f3ee); border-left: 1px solid var(--rule-soft); }
+.ocard2-side ul { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 18px; }
+.ocard2-side .odistrict { flex-direction: column; gap: 14px; }
+.ocard2-side .odistrict-photo { width: 72px; height: 90px; border-radius: 14px; box-shadow: 0 10px 22px -12px rgba(9, 19, 21, 0.45); }
+.odistrict-name { margin: 0; font-family: var(--font-hero); font-weight: 700; font-size: 19px; letter-spacing: -0.025em; }
+.ocard2-side .odistrict-label { margin: 2px 0 0; font-family: var(--font-body); font-weight: 600; font-size: 13.5px; color: var(--accent-deep); }
+.odistrict-role { margin: 2px 0 0 !important; font-size: 12.5px; color: var(--ink-3); }
+.ocard2-side .odistrict-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px !important; }
+.obtn { display: inline-flex; align-items: center; height: 34px; padding: 0 12px; border-radius: 8px; background: #fff; border: 1px solid var(--rule); color: var(--ink) !important; font-size: 13px; font-weight: 600; text-decoration: none !important; transition: background-color .2s ease, border-color .2s ease; }
+.obtn:hover { background: var(--accent-soft); border-color: var(--accent-tint); }
+
+@media (max-width: 1240px) {
+  .ocard2 { grid-template-columns: 1fr; }
+  .ocard2-side { border-left: none; border-top: 1px solid var(--rule-soft); }
+  .ocard2-side .odistrict { flex-direction: row; }
+}
+@media (max-width: 860px) {
+  .ocard2-main, .ocard2-side { padding: 20px 18px; }
+  .ocard2-figs { grid-template-columns: 1fr 1fr; }
+  .ocard2 .ocard-head { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .tier-badge { align-items: flex-start; }
+}
+.ocard2-split .dist { display: flex; }
+.ocard2-split .dist-seg { display: block; min-width: 8px; }
+
+/* =============================================================
+   Hero v3: one photo panel holding the headline, the actions and
+   the four figures on frosted glass
+   ============================================================= */
+.banner {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "copy actions" "kpis kpis";
+  align-items: end;
+  row-gap: 40px;
+  padding: 48px 40px 28px;
+  min-height: 560px;
+}
+.banner-copy { grid-area: copy; }
+.banner-actions { grid-area: actions; flex-direction: row; }
+.banner-kpis { grid-area: kpis; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.banner-bg {
+  background:
+    linear-gradient(90deg, rgba(9, 19, 21, 0.88) 0%, rgba(9, 19, 21, 0.62) 45%, rgba(9, 19, 21, 0.3) 100%),
+    linear-gradient(180deg, rgba(9, 19, 21, 0.3) 0%, rgba(9, 19, 21, 0) 30%, rgba(9, 19, 21, 0.55) 62%, rgba(9, 19, 21, 0.92) 100%),
+    url("../assets/taal-dusk.webp") center 40% / cover no-repeat;
+}
+.banner h1 { font-size: clamp(36px, 4.8vw, 64px); }
+
+/* Glass figures */
+.banner .kpi {
+  grid-column: auto;
+  animation: rise .8s var(--ease) both;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 20px 40px -24px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(18px) saturate(1.3);
+  -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  color: #fff;
+}
+.banner .kpi:hover { border-color: rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.12); }
+.banner .kpi::after { background: radial-gradient(320px circle at var(--mx, 50%) var(--my, -200px), rgba(255, 255, 255, 0.1), transparent 60%); }
+.banner .kpi-label { color: #fff; }
+.banner .kpi-hint { color: rgba(255, 255, 255, 0.62); }
+.banner .kpi-value { color: #fff; }
+.banner .kpi-accent .kpi-value { background: linear-gradient(90deg, #d7e6ce, #a9c79b); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.banner .kpi-sub { color: rgba(255, 255, 255, 0.72); }
+.banner .kpi-scale-row { background: rgba(255, 255, 255, 0.12); }
+.banner .kpi-scale-row i { background: rgba(255, 255, 255, 0.35); }
+.banner .kpi-scale-row.is-me i { background: linear-gradient(90deg, #a9c79b, #d7e6ce); box-shadow: none; }
+.banner .kpi:nth-child(3) .kpi-scale-row.is-me i { background: linear-gradient(90deg, #8fb383, #c9dcbf); }
+.banner .kpi-delta.up { background: rgba(169, 199, 155, 0.2); color: #d7e6ce; }
+.banner .dot { background: rgba(255, 255, 255, 0.14); }
+.banner .dot.g-unchanged { background: linear-gradient(135deg, #c3d1be, #94ad89); }
+.banner .dot.g-nep_only { background: repeating-linear-gradient(135deg, rgba(255,255,255,.8) 0 1.5px, transparent 1.5px 3.5px); }
+.banner .kpi-pop { background: linear-gradient(160deg, rgba(232, 150, 42, 0.22), rgba(255, 255, 255, 0.06) 70%); border-color: rgba(246, 203, 133, 0.35); }
+.banner .kpi-pop .kpi-value { color: #f7d08f; }
+.banner .kpi-go { color: #f7d08f; }
+.banner .ring-track { stroke: rgba(255, 255, 255, 0.14); }
+.banner .ring-text { fill: #f7d08f; }
+
+@media (max-width: 1240px) {
+  .banner-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 1100px) {
+  .banner { grid-template-columns: 1fr; grid-template-areas: "copy" "actions" "kpis"; row-gap: 24px; }
+}
+@media (max-width: 860px) {
+  .banner { padding: 28px 18px 18px; min-height: 0; }
+  .banner-actions { flex-wrap: wrap; }
+  .banner-bg {
+    background:
+      linear-gradient(180deg, rgba(9, 19, 21, 0.78) 0%, rgba(9, 19, 21, 0.7) 40%, rgba(9, 19, 21, 0.9) 100%),
+      url("../assets/taal-dusk-900.webp") 62% 30% / cover no-repeat;
+  }
+}
+@media (max-width: 560px) {
+  .banner-kpis { grid-template-columns: 1fr; }
+}
+.banner .dot.g-house_only { background: linear-gradient(135deg, #f6cb85, #e8962a); }
+
+/* =============================================================
+   Menus on touch screens: no sliding (no hover there), but the
+   current page wears the same sage pill as on desktop
+   ============================================================= */
+.ptabs:not(.has-pill) a.active,
+.gt-layout .nav:not(.has-pill) a.active {
+  background: var(--grad);
+  color: #fff;
+  box-shadow: 0 6px 16px -8px rgba(68, 96, 60, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+.ptabs:not(.has-pill) a.active::after { display: none; }
+.gt-layout .nav:not(.has-pill) a.active .nav-icon { color: #fff; }
+.ptabs:not(.has-pill) a.active .ptab-chip,
+.gt-layout .nav:not(.has-pill) a.active .chip { background: rgba(255, 255, 255, 0.2); border-color: transparent; color: #fff; }
+.ptabs:not(.has-pill) a:not(.active):active,
+.gt-layout .nav:not(.has-pill) a:not(.active):active { background: var(--accent-soft); }

@@ -16,6 +16,7 @@ import { count, php, phpDelta, plural } from '../lib/format';
 import { usePortal } from '../lib/portal-context';
 import type { QueryReport, ScopedProject } from '../lib/scope';
 import { Await, External } from './Bits';
+import { Icon } from './Dash';
 
 interface DistrictRow {
   id: string;
@@ -134,69 +135,96 @@ function Office({ view }: { view: OfficeView }) {
   const unconfirmed = f?.annotations?.unconfirmed_rows ?? 0;
   const held = f?.office_change?.rows ?? 0;
 
+  const totalRows = groups.reduce((n, c) => n + c.rows, 0);
+  const nepMax = Math.max(f?.nep_php ?? 0, f?.hgab3_php ?? 0, 1);
+
   return (
-    <article className="ocard">
-      <header className="ocard-head">
-        <div>
-          <p className="label">DPWH {office.kind_label.replace(/ \(DEO\)$/, '')}{office.region && <> · {office.region}</>}</p>
-          <h3>{printed}</h3>
-        </div>
-        <span className={`tag tier tier-${office.tier}`}>{office.tier_text}</span>
-      </header>
+    <article className="ocard ocard2">
+      <div className="ocard2-main">
+        <header className="ocard-head">
+          <div className="ocard2-title">
+            <span className="ocard2-icon" aria-hidden="true"><Icon name="offices" /></span>
+            <div>
+              <p className="dcard-kicker">DPWH {office.kind_label.replace(/ \(DEO\)$/, '')}{office.region && <> · {office.region}</>}</p>
+              <h3>{printed}</h3>
+            </div>
+          </div>
+          <span className={`tier-badge tier-${office.tier}`} data-tip={office.tier_text}>
+            Tier {office.tier}<span>{office.tier === 'A' ? 'serves only this district' : 'shared, never split'}</span>
+          </span>
+        </header>
 
-      <dl className="ocard-figs">
-        <div>
-          <dt className="label">In this portal</dt>
-          <dd>{lines ? <Link to={filter()} className="ocard-lines">{plural(lines, 'line')} →</Link> : <span className="muted">none</span>}</dd>
-        </div>
-        <div>
-          <dt className="label">NEP</dt>
-          <dd className="num">{php(f?.nep_php)}</dd>
-        </div>
-        <div>
-          <dt className="label">House bill</dt>
-          <dd className="num stat-accent">{php(f?.hgab3_php)}</dd>
-        </div>
-        <div>
-          <dt className="label">Change</dt>
-          <dd className="num">{phpDelta(change)}</dd>
-        </div>
-      </dl>
+        <dl className="ocard2-figs">
+          <div className="is-lines">
+            <dt><Icon name="projects" /> In this portal</dt>
+            <dd>{lines ? <Link to={filter()} className="ocard-lines">{plural(lines, 'line')} <span aria-hidden="true">→</span></Link> : <span className="muted">none</span>}</dd>
+          </div>
+          <div>
+            <dt><Icon name="doc" /> NEP</dt>
+            <dd className="num">{php(f?.nep_php)}</dd>
+            <span className="ofig-bar" aria-hidden="true"><i className="k-nep" style={{ width: `${((f?.nep_php ?? 0) / nepMax) * 100}%` }} /></span>
+          </div>
+          <div className="is-house">
+            <dt><Icon name="capitol" /> House bill</dt>
+            <dd className="num">{php(f?.hgab3_php)}</dd>
+            <span className="ofig-bar" aria-hidden="true"><i className="k-house" style={{ width: `${((f?.hgab3_php ?? 0) / nepMax) * 100}%` }} /></span>
+          </div>
+          <div>
+            <dt><Icon name="history" /> Change</dt>
+            <dd><span className={`chg ${change == null || change === 0 ? 'chg-same' : change > 0 ? 'chg-up' : 'chg-down'} chg-lg`}>{phpDelta(change)}</span></dd>
+          </div>
+        </dl>
 
-      {groups.length > 0 && (
-        <p className="ocard-groups">
-          {groups.map((c) => {
-            const text = <><span className={`status-dot g-${c.group}`} aria-hidden="true" />{count(c.rows)} {c.label.charAt(0).toLowerCase() + c.label.slice(1)}</>;
-            // These counts are the whole office's: link them only when all of its lines are in the portal.
-            return query ? <Link key={c.group} to={filter(c.group)}>{text}</Link> : <span key={c.group}>{text}</span>;
-          })}
+        {groups.length > 0 && (
+          <div className="ocard2-split">
+            <p className="ocard2-split-h">The whole office's lines, by what the House bill did</p>
+            <div className="dist" aria-hidden="true">
+              {groups.map((c) => (
+                <span key={c.group} className={`dist-seg g-${c.group}`} style={{ flexGrow: c.rows }} data-tip={`${count(c.rows)} ${c.label.charAt(0).toLowerCase() + c.label.slice(1)} (${Math.round((c.rows / totalRows) * 100)}%)`} />
+              ))}
+            </div>
+            <p className="ocard-groups">
+              {groups.map((c) => {
+                const text = <><span className={`status-dot g-${c.group}`} aria-hidden="true" /><b className="num">{count(c.rows)}</b> {c.label.charAt(0).toLowerCase() + c.label.slice(1)}</>;
+                // These counts are the whole office's: link them only when all of its lines are in the portal.
+                return query ? <Link key={c.group} to={filter(c.group)} className="ochip">{text}</Link> : <span key={c.group} className="ochip">{text}</span>;
+              })}
+            </p>
+          </div>
+        )}
+
+        <p className="ocard2-note">
+          <Icon name="about" />
+          <span>
+            Named projects{f ? <>: {count(f.nep_records)} in the NEP, {count(f.hgab3_records)} in the House bill</> : null}.
+            {wholeNep != null && <> The whole office in the NEP: {php(wholeNep)}.</>}
+            {unconfirmed > 0 && <> Includes {plural(unconfirmed, 'unconfirmed match', 'unconfirmed matches')} ({php(f?.annotations?.unconfirmed_php)}).</>}
+            {held > 0 && <> {plural(held, 'line')} whose two versions name different offices {held === 1 ? 'is' : 'are'} not in these figures.</>}{' '}
+            <Link to={`/gaa#${office.id}`}>Its budget each year since 2020 →</Link>
+            {!query && office.projects_url && (
+              <> This portal lists only this office's lines that name its place; <External href={office.projects_url}>see all of them</External>.</>
+            )}
+          </span>
         </p>
-      )}
-      <p className="ocard-note">
-        Named projects{f ? <>: {count(f.nep_records)} in the NEP, {count(f.hgab3_records)} in the House bill</> : null}.
-        {wholeNep != null && <> The whole office in the NEP: {php(wholeNep)}.</>}
-        {unconfirmed > 0 && <> Includes {plural(unconfirmed, 'unconfirmed match', 'unconfirmed matches')} ({php(f?.annotations?.unconfirmed_php)}).</>}
-        {held > 0 && <> {plural(held, 'line')} whose two versions name different offices {held === 1 ? 'is' : 'are'} not in these figures.</>}{' '}
-        <Link to={`/gaa#${office.id}`}>Its budget each year since 2020 →</Link>
-      </p>
+      </div>
 
-      <div className="ocard-districts">
-        <p className="label">
+      <aside className="ocard2-side">
+        <p className="dcard-kicker">
           {districts.length === 1 ? 'Legislative district it serves' : `${districts.length} legislative districts it serves`}
           {office.tier === 'B' && <> · shared, not split</>}
         </p>
         <ul>
           {districts.map((d) => <District key={d.id} row={d} />)}
         </ul>
-      </div>
-
-      {!query && office.projects_url && (
-        <p className="small">
-          This portal lists only this office’s lines that name its place. <External href={office.projects_url}>All of them</External>
-        </p>
-      )}
+      </aside>
     </article>
   );
+}
+
+/** "Collantes, King" → "King Collantes"; other forms as they are. */
+function displayName(name: string): string {
+  const m = /^([^,]+),\s*([^,]+)$/.exec(name.trim());
+  return m ? `${m[2]} ${m[1]}` : name;
 }
 
 function District({ row }: { row: DistrictRow }) {
@@ -210,21 +238,20 @@ function District({ row }: { row: DistrictRow }) {
           src={portrait.url}
           alt={`Portrait of ${rep?.name ?? row.label}`}
           title={`${portrait.attribution} · ${portrait.license} · ${portrait.source_url}`}
-          width="40"
-          height="50"
+          width="72"
+          height="90"
           loading="lazy"
         />
       ) : (
         <span className="odistrict-photo" aria-hidden="true" />
       )}
       <div>
+        <p className="odistrict-name">{rep ? displayName(rep.name) : <span className="muted">No representative listed</span>}</p>
         <p className="odistrict-label">{row.label}</p>
-        <p className="small">
-          {rep ? rep.name : <span className="muted">No representative listed</span>}
-        </p>
+        <p className="odistrict-role">Representative, 20th Congress</p>
         <p className="odistrict-links small">
-          {rep?.bills_url && <External href={rep.bills_url}>Bills</External>}
-          {row.card && <External href={row.card.url}>District page</External>}
+          {rep?.bills_url && <a className="obtn" href={rep.bills_url} target="_blank" rel="noopener">Bills ↗</a>}
+          {row.card && <a className="obtn" href={row.card.url} target="_blank" rel="noopener">District page ↗</a>}
           {row.alsoServedBy.length > 0 && <span className="muted">also served by {row.alsoServedBy.join(', ')}</span>}
         </p>
       </div>

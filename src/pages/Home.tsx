@@ -161,9 +161,10 @@ function Projects({ scope, datasets }: { scope: ScopeResult; datasets: DatasetIn
               </button>
             )}
           </div>
+          <div className="banner-kpis">
+            <Kpis summary={summary} rows={all} programName={programName} />
+          </div>
         </header>
-
-        <Kpis summary={summary} rows={all} programName={programName} />
 
         <Card index={5} className="span-7" kicker="Compared, never added" title="NEP against the House bill">
           <Compare summary={summary} />
