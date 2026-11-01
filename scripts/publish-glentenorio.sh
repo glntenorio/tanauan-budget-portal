@@ -9,7 +9,8 @@ DEST="${PORTFOLIO:-$HOME/Desktop/Claude Projects/portfolio}/tools/tanauan-budget
 
 # Pick up any change to the site's sidebar first.
 node scripts/sync-gt-sidebar.mjs "${PORTFOLIO:-$HOME/Desktop/Claude Projects/portfolio}"
-PORTAL_BASE=$BASE npm run build
+# Analytics: the same GA4 property as the rest of glentenorio.com.
+PORTAL_BASE=$BASE VITE_GA4_ID=G-TCVLZ27X9S npm run build
 rm -rf "$DEST"
 mkdir -p "$DEST"
 cp -R dist/. "$DEST/"

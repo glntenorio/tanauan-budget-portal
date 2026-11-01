@@ -16,6 +16,7 @@ import { count, php, phpDelta, plural } from '../lib/format';
 import { usePortal } from '../lib/portal-context';
 import { summarise, type ScopedProject, type ScopeResult, type Summary } from '../lib/scope';
 import { useTitle } from '../lib/use-title';
+import { track } from '../lib/analytics';
 
 const PAGE = 100;
 
@@ -87,6 +88,8 @@ function Projects({ scope, datasets }: { scope: ScopeResult; datasets: DatasetIn
   const [shown, setShown] = useState(PAGE);
 
   const setParam = (key: string, value: string) => {
+    // Filters are events; the search box is left out (it would send one per keystroke).
+    if (key !== 'q') track('filter', { list: 'projects', field: key, value: value || 'all' });
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
     else next.delete(key);
@@ -256,7 +259,7 @@ function Projects({ scope, datasets }: { scope: ScopeResult; datasets: DatasetIn
           <h2 id="list-h" className="section-h">
             {narrowed ? `${count(filtered.length)} of ${plural(all.length, 'project')}` : `Every project (${count(all.length)})`}
           </h2>
-          <button type="button" className="button button-quiet" onClick={() => downloadText(`${config.id}-fy2027-projects.csv`, projectsCsv(filtered))}>
+          <button type="button" className="button button-quiet" onClick={() => { track('file_download', { file_name: `${config.id}-fy2027-projects.csv`, rows: filtered.length }); downloadText(`${config.id}-fy2027-projects.csv`, projectsCsv(filtered)); }}>
             Download CSV{narrowed ? ` (${count(filtered.length)})` : ''}
           </button>
         </div>

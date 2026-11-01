@@ -8,7 +8,20 @@ import { DEFAULT_API, shortNameOf } from './src/config';
 const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 
 /** The portal's name and description in the HTML itself, for link previews and search engines. */
-function portalHtml(api: string): Plugin {
+/** GA4 snippet, only when the build sets an id. Page views are sent by the app on each route change. */
+function analyticsSnippet(id: string | undefined): string {
+  if (!id || !/^G-[A-Z0-9]+$/.test(id)) return '';
+  return `
+    <script async src="https://www.googletagmanager.com/gtag/js?id=${id}"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', '${id}', { send_page_view: false });
+    </script>`;
+}
+
+function portalHtml(api: string, ga4?: string): Plugin {
   const short = shortNameOf(portal);
   // The home page's head. Other pages set their own at runtime (src/lib/use-title.ts).
   const title = `${portal.name} 2027 Budget: Every Project, NEP vs House Bill`;
@@ -85,7 +98,7 @@ function portalHtml(api: string): Plugin {
         .replaceAll('%PORTAL_NAME%', escape(portal.name))
         .replaceAll('%PORTAL_DESCRIPTION%', escape(description))
         .replaceAll('%PORTAL_API%', escape(api))
-        .replaceAll('%PORTAL_URL_META%', url + og + (ld ? `\n    <script type="application/ld+json">${ld}</script>` : ''))
+        .replaceAll('%PORTAL_URL_META%', url + og + (ld ? `\n    <script type="application/ld+json">${ld}</script>` : '') + analyticsSnippet(ga4))
         .replace('<meta name="twitter:card" content="summary" />', og ? '<meta name="twitter:card" content="summary_large_image" />' : '<meta name="twitter:card" content="summary" />'),
   };
 }
@@ -96,7 +109,7 @@ export default defineConfig(({ mode }) => {
   return {
     // PORTAL_BASE=/tools/tanauan-budget-portal/ builds for a sub-path of another site.
     base: process.env.PORTAL_BASE || '/',
-    plugins: [react(), portalHtml(api)],
+    plugins: [react(), portalHtml(api, env.VITE_GA4_ID)],
     server: {
       host: '0.0.0.0',
       // Reserved in ~/projects/ports.md (transparency-portal). strictPort so a

@@ -11,6 +11,7 @@ import { usePortal, type Async } from '../lib/portal-context';
 import { projectKey } from '../lib/scope';
 import { reportHref } from '../lib/report';
 import { useTitle } from '../lib/use-title';
+import { track } from '../lib/analytics';
 
 const VERSIONS: Version[] = ['nep', 'hgab2', 'hgab3', 'api'];
 const FALLBACK_VERSION_LABELS: Record<Version, string> = {
@@ -162,7 +163,7 @@ function ProjectView({ env }: { env: Envelope<ProjectDetail> }) {
                       <i className={`k-${st.v}`} style={{ width: `${((st.amount ?? 0) / max) * 100}%`, transitionDelay: `${200 + i * 120}ms` }} />
                     </span>
                     {st.pdf ? (
-                      <a className="vstep-src" href={st.pdf} target="_blank" rel="noopener">
+                      <a className="vstep-src" href={st.pdf} target="_blank" rel="noopener" onClick={() => track('open_source_document', { version: st.v, page: st.page ?? undefined, project: p.id })}>
                         <Icon name="doc" /> {st.page ? `Open page ${st.page}` : 'Open the document'} <span aria-hidden="true">↗</span>
                       </a>
                     ) : (

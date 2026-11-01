@@ -18,6 +18,7 @@ import { count, php, phpFull, plural } from '../lib/format';
 import { departmentShort, gaaCsv, gaaYearTotals, hasYear, loadGaa, type GaaResult, type GaaRow } from '../lib/gaa';
 import { usePortal, type Async } from '../lib/portal-context';
 import { useTitle } from '../lib/use-title';
+import { track } from '../lib/analytics';
 
 const PAGE = 100;
 const FIRST = GAA_YEARS[0];
@@ -242,6 +243,8 @@ function Programs({ result, placeList }: { result: GaaResult; placeList: string 
   const year = (GAA_YEARS as readonly number[]).includes(yearParam) ? yearParam : null;
   const [shown, setShown] = useState(PAGE);
   const setParam = (key: string, value: string) => {
+    // Filters are events; the search box is left out (it would send one per keystroke).
+    if (key !== 'q') track('filter', { list: 'programs', field: key, value: value || 'all' });
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
     else next.delete(key);
@@ -318,7 +321,7 @@ function Programs({ result, placeList }: { result: GaaResult; placeList: string 
           <h2 id="gaa-list-h" className="section-h">
             {narrowed ? `${count(filtered.length)} of ${plural(all.length, 'program')}` : `Every program and project (${count(all.length)})`}
           </h2>
-          <button type="button" className="button button-quiet" onClick={() => downloadText(`${config.id}-gaa-${FIRST}-${LAST}.csv`, gaaCsv(filtered))}>
+          <button type="button" className="button button-quiet" onClick={() => { track('file_download', { file_name: `${config.id}-gaa-${FIRST}-${LAST}.csv`, rows: filtered.length }); downloadText(`${config.id}-gaa-${FIRST}-${LAST}.csv`, gaaCsv(filtered)); }}>
             Download CSV{narrowed ? ` (${count(filtered.length)})` : ''}
           </button>
         </div>

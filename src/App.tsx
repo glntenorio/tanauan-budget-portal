@@ -1,4 +1,6 @@
-import { Link, Navigate, Route, Routes } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { trackPageView } from './lib/analytics';
 import { Footer, GtLayout, PortalBar } from './components/Chrome';
 import ScrollToTop from './components/ScrollToTop';
 import { configProblems } from './config';
@@ -10,6 +12,9 @@ import Enacted from './pages/Enacted';
 
 export default function App() {
   const { config } = usePortal();
+  const { pathname } = useLocation();
+  // One page view per page (not per filter: those are events). The page's own effects have set its title by now.
+  useEffect(() => { trackPageView(); }, [pathname]);
   const problems = import.meta.env.DEV ? configProblems(config) : [];
   return (
     <GtLayout>
