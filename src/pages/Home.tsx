@@ -7,6 +7,8 @@ import { Await, Disclaimers } from '../components/Bits';
 import OfficesSection from '../components/OfficesSection';
 import { AreaChart, BarList, Card, CountUp, DotMatrix, Donut, Icon, Ring, type IconName } from '../components/Dash';
 import { useGrown } from '../lib/motion';
+import { barangayOf, kindOf, rowTitle, shortTitle } from '../lib/titles';
+import { ChangeBadge } from '../components/ChangeBadge';
 import BETTERGOV_LOGO from '../assets/bettergov-horizontal-primary.webp';
 import { gaaYearTotals, loadGaa } from '../lib/gaa';
 import { projectsCsv, downloadText } from '../lib/csv';
@@ -375,11 +377,6 @@ function Lede({ summary }: { summary: Summary }) {
   );
 }
 
-/** "Construction of Multi-Purpose Building, Barangay X, Tanauan City, Batangas" → without the city and province. */
-function shortTitle(t: string): string {
-  return t.replace(/,?\s*Tanauan City,?\s*Batangas.*$/i, '').replace(/,?\s*Batangas\s*$/i, '');
-}
-
 function KpiHead({ icon, label, hint, badge }: { icon: IconName; label: string; hint?: string; badge?: ReactNode }) {
   return (
     <div className="kpi-head">
@@ -517,47 +514,6 @@ function EnactedTrend() {
       <p className="trend-note">Programs whose names place them in {config.shortName ?? config.name}. Each year stands alone; years are never added.</p>
     </>
   );
-}
-
-/** What kind of work a line is, from its title: for the row icon. */
-function kindOf(p: ScopedProject): { icon: IconName; label: string } {
-  const t = p.title.toLowerCase();
-  if (p.dataset === 'fmr' || /farm-to-market|\bfmr\b/.test(t)) return { icon: 'sprout', label: 'Farm-to-market road' };
-  if (/flood|drainage|canal|slope protection|river/.test(t)) return { icon: 'water', label: 'Flood control and drainage' };
-  if (/bridge|\bbr\.?\b/.test(t)) return { icon: 'bridge', label: 'Bridge' };
-  if (/\broad\b|\brd\b|street|concreting|circumferential|diversion/.test(t)) return { icon: 'road', label: 'Road' };
-  if (/building|hall|school|center|centre|court|office/.test(t)) return { icon: 'building', label: 'Building' };
-  return { icon: 'projects', label: 'Project' };
-}
-
-/** "…, Barangay Darasa, Tanauan, Batangas" → "Brgy. Darasa". */
-function barangayOf(title: string): string | null {
-  // Name words are capitalised; all-caps codes ("FMR") and the city are not part of it.
-  const m = /\b(?:Barangay|Brgy\.?)\s+((?![A-Z]{2,}\b)(?!Hall\b)[A-Z][\w.ñÑ-]*(?:\s+(?!Tanauan\b)(?![A-Z]{2,}\b)[A-Z0-9][\w.ñÑ-]*)*)/.exec(title);
-  return m ? `Brgy. ${m[1].replace(/[,.]$/, '')}` : null;
-}
-
-/** The title without the city and province, and without the barangay when it is shown as a tag. */
-function rowTitle(title: string, brgy: string | null): string {
-  let t = shortTitle(title).replace(/,?\s*Tanauan(?: City)?\s*$/i, '');
-  // Only a trailing ", Barangay X" clause moves to the tag; "of Brgy. X Road" is part of the name.
-  if (brgy) {
-    t = t.replace(/,\s*(?:at\s+)?(?:Barangay|Brgy\.?)\s+[^,]+(?=,|$)/, '');
-    // A trailing "… at Barangay X" or "… - Barangay X" (not "of Brgy. X …").
-    t = t.replace(/(?<!\bof)\s+(?:at\s+|-\s+)?(?:Barangay|Brgy\.?)\s+(?!Hall\b)[^,()]+$/, '');
-  }
-  return t.replace(/[,\s]+$/, '');
-}
-
-function ChangeBadge({ p }: { p: ScopedProject }) {
-  switch (p.bridge_group) {
-    case 'house_only': return <span className="chg chg-new">New in House</span>;
-    case 'nep_only': return <span className="chg chg-dropped">Dropped</span>;
-    case 'unchanged': return <span className="chg chg-same">No change</span>;
-    case 'increased': return <span className="chg chg-up">{phpDelta(p.delta_php)}</span>;
-    case 'decreased': return <span className="chg chg-down">{phpDelta(p.delta_php)}</span>;
-    default: return <span className="chg chg-same">{phpDelta(p.delta_php)}</span>;
-  }
 }
 
 function ProjectTable({ rows, programName }: { rows: ScopedProject[]; programName: (k: DatasetKey) => string }) {
